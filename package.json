@@ -1,0 +1,24 @@
+{
+  "name": "ubuntu-touch-kiosk",
+  "version": "0.2.0",
+  "description": "Ubuntu Wayland touchscreen kiosk launcher built with Electron + labwc — floating dock, virtual keyboard, edge-swipe gestures, rounded external app framing, morphing clock lock screen & AdGuard Home DNS ad-blocking.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/main/main.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/clean-stale.mjs && node scripts/fix-preload.mjs && node scripts/copy-assets.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.mjs",
+    "start": "npm run build && electron --ozone-platform=wayland dist/main/main.js",
+    "start:x11": "npm run build && electron dist/main/main.js",
+    "probe": "npm run build && electron dist/main/main.js --ntf-dev --ntf-probe"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^45.4.1",
+    "typescript": "^5.7.2"
+  }
+}

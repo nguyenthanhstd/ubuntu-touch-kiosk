@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>Cài đặt</title>
+    <link rel="stylesheet" href="settings.css" />
+    <link rel="stylesheet" href="settings-controls.css" />
+    <link rel="stylesheet" href="adblock-panel.css" />
+  </head>
+  <body>
+    <!--
+      Thẻ Cài đặt. Hai nhóm, đúng hai câu hỏi mà người quản lý panel cần trả lời: bao lâu thì màn hình
+      chờ hiện, và có giữ sáng khi đang phát video không. Mã quản trị không nằm ở đây — nó là mật khẩu
+      sudo của máy, không phải một cài đặt của ứng dụng.
+    -->
+    <section class="card" id="card" role="dialog" aria-label="Cài đặt panel">
+      <header class="card__head">
+        <div class="card__title">
+          <svg class="card__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <h1>Cài đặt</h1>
+        </div>
+        <button class="card__close" id="close" type="button" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="card__body">
+        <!-- Nhóm 1: thời gian chờ. Sáu lựa chọn = đúng IDLE_CHOICES_MS trong shared/settings.ts. -->
+        <section class="group">
+          <div class="group__head">
+            <div class="group__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+            <div>
+              <h2>Màn hình chờ</h2>
+              <p class="group__hint">Sau khoảng thời gian không có thao tác, panel chuyển sang màn hình đen có đồng hồ. Chạm vào để mở khóa.</p>
+            </div>
+          </div>
+          <div class="choices" id="idle-choices" role="radiogroup" aria-label="Thời gian chờ"></div>
+        </section>
+
+        <!-- Nhóm 2: giữ sáng khi phát media. -->
+        <section class="group">
+          <div class="group__head">
+            <div class="group__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path>
+                <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+              </svg>
+            </div>
+            <div>
+              <h2>Giữ sáng khi phát video</h2>
+              <p class="group__hint">Đang có video hoặc nhạc phát thì không tính giờ chờ. Tắt video xong mới bắt đầu đếm lại.</p>
+            </div>
+          </div>
+          <button class="switch" id="keep-awake" type="button" role="switch" aria-checked="false">
+            <span class="switch__track"><span class="switch__thumb"></span></span>
+            <span class="switch__label" id="keep-awake-label">Tắt</span>
+          </button>
+        </section>
+
+        <!--
+          Nhóm 3: chặn quảng cáo. Chỉ đọc — số liệu do timer root ghi ra tệp JSON, app không giữ mật
+          khẩu quản trị AdGuard nên không có nút bật/tắt nào ở đây. Chi tiết từng truy vấn nằm ở giao
+          diện web của AdGuard; địa chỉ in ở chân khối này.
+        -->
+        <section class="group">
+          <div class="group__head">
+            <div class="group__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div>
+              <h2>Chặn quảng cáo</h2>
+              <p class="group__hint">Lọc ngay ở tầng DNS nên chặn được cả trong ứng dụng lẫn trên mọi máy trong nhà đang dùng DNS này.</p>
+            </div>
+          </div>
+          <div class="adblock">
+            <div class="adblock__figures">
+              <div class="adblock__figure">
+                <span class="adblock__value" id="adblock-blocked">—</span>
+                <span class="adblock__label">lượt đã chặn</span>
+              </div>
+              <div class="adblock__figure">
+                <span class="adblock__value" id="adblock-percent">—</span>
+                <span class="adblock__label">tỉ lệ chặn</span>
+              </div>
+            </div>
+            <p class="adblock__total" id="adblock-total"></p>
+            <ul class="adblock__list" id="adblock-list" hidden></ul>
+            <p class="adblock__foot" id="adblock-foot"></p>
+          </div>
+        </section>
+      </div>
+
+      <footer class="card__foot">
+        <span class="card__status" id="status" role="status" aria-live="polite"></span>
+        <button class="btn-primary" id="save" type="button">Lưu</button>
+      </footer>
+    </section>
+
+    <div class="toast" id="toast" hidden></div>
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

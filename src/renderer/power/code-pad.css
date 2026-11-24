@@ -1,0 +1,138 @@
+/*
+ * Bàn phím số nhập mã quản trị.
+ *
+ * Phủ lên thẻ thay vì chen vào luồng: cửa sổ thẻ là kích thước cố định (`resizable: false`), nên một
+ * hàng cao thêm làm cả thẻ nhảy và ngón tay đang đặt trên nút sẽ rơi sang nút khác.
+ *
+ * Mười ô tròn luôn được vẽ đủ chứ không vẽ bằng số ký tự đã gõ: nếu chỉ vẽ số ô đang dùng, hàng ô
+ * phình ra mỗi lần gõ thêm và lưới phím bên dưới nhảy theo.
+ */
+
+.codepad {
+  position: fixed;
+  inset: 26px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 24px 40px;
+  border: 1px solid rgba(200, 158, 71, 0.34);
+  border-radius: var(--radius);
+  /* Gần đục chứ không đục hẳn: còn thấy mờ thẻ phía sau nên người dùng biết mình chưa đi đâu. */
+  background: rgba(16, 15, 12, 0.97);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  animation: codepad-in 170ms ease-out both;
+}
+
+.codepad[hidden] {
+  display: none;
+}
+
+@keyframes codepad-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.codepad__head {
+  text-align: center;
+}
+
+.codepad__head h2 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.codepad__hint {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-dim);
+}
+
+.codepad__dots {
+  display: flex;
+  gap: 12px;
+  height: 22px;
+  align-items: center;
+}
+
+.codepad__dot {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--ink-faint);
+  border-radius: 50%;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.codepad__dot.is-filled {
+  border-color: var(--gold-soft);
+  background: var(--gold-soft);
+  transform: scale(1.08);
+}
+
+/* Lưới 3×4 đúng như bàn phím số điện thoại — người dùng đã quen tay, không cần học lại. */
+.codepad__keys {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  gap: 14px;
+}
+
+.codepad__key {
+  height: 78px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card-2);
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 400;
+  font-family: inherit;
+  /* `tabular-nums` để các chữ số cùng bề rộng — lưới đã cố định nên không cần, nhưng giữ cho chắc
+     khi font dự phòng có chữ số đệm khác nhau. */
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 110ms ease, border-color 110ms ease, transform 110ms ease;
+}
+
+.codepad__key:active {
+  border-color: var(--gold);
+  background: #2f281a;
+  transform: scale(0.96);
+}
+
+/* Phím xóa lùi: glyph Lucide, không phải chữ, để không bị lẫn với các phím số. */
+.codepad__key--icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--ink-dim);
+}
+
+/* Ô trống thứ 12 của lưới: giữ chỗ để cụm phím không lệch sang trái. */
+.codepad__key--blank {
+  border: 0;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.codepad__foot {
+  display: flex;
+  gap: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codepad {
+    animation: none;
+  }
+
+  .codepad__dot {
+    transition: none;
+  }
+}

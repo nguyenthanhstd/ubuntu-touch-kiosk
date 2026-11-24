@@ -1,0 +1,240 @@
+/*
+ * Thẻ Nguồn — vỏ thẻ.
+ *
+ * Cùng bộ token với thẻ Âm lượng và Cài đặt để ba cửa sổ nằm cạnh nhau vẫn là một hệ. Tự chứa, không
+ * link `base.css`: đây là document riêng, và `base.css` mô tả *băng nội dung* của kiosk chứ không mô
+ * tả một cửa sổ nổi.
+ */
+
+:root {
+  --ink: #f2efe9;
+  --ink-dim: #a5a099;
+  --ink-faint: #6f6a63;
+  --gold: #c89e47;
+  --gold-soft: #e2c67f;
+  --danger: #e0704d;
+  --card: #14130f;
+  --card-2: #1c1a15;
+  --line: #2c2820;
+  --radius: 26px;
+  --dur: 190ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  font-family: 'Inter', 'Noto Sans', 'Segoe UI', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Đệm 26 px để bóng đổ có chỗ vẽ, cùng lý do như hai thẻ kia.
+   Chỉ `body` có đệm: `box-sizing: border-box` khiến `height: 100%` tính cả đệm, nên đặt đệm ở cả
+   `html` lẫn `body` sẽ cộng dồn thành 52 px và thẻ nhỏ hơn khung 10%. */
+html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 26px;
+  background: transparent;
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 44%);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: card-in var(--dur) var(--ease) both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 30px 18px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.card__title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.card__glyph {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+
+.card__glyph svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card__title h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.card__close {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-2);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.card__close svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card__close:active {
+  background: #2a2419;
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 22px 30px 8px;
+  overflow-y: auto;
+}
+
+/* Câu giải thích dưới lưới nút. Một dòng, đổi nội dung theo hành động vừa chọn — không phải toast,
+   vì nó phải ở lại để đọc được sau khi cú chạm đã xong. */
+.note {
+  margin: 16px 2px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  min-height: 44px;
+  flex: 0 0 auto;
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px 30px 20px;
+  flex: 0 0 auto;
+}
+
+.card__status {
+  font-size: 15px;
+  color: var(--ink-faint);
+  text-align: right;
+  min-height: 20px;
+}
+
+.card__status.is-alert {
+  color: var(--danger);
+}
+
+.card__status.is-ok {
+  color: #6fbf8f;
+}
+
+/*
+ * Hai nút của bàn phím số. Tự chứa chứ không link chéo `settings.css`: mỗi cửa sổ thẻ là một document
+ * riêng, và vài khai báo lặp lại rẻ hơn một tệp CSS dùng chung mà hai thẻ phải nhớ giữ đồng bộ.
+ */
+.btn-mini {
+  min-height: 56px;
+  padding: 0 26px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #241f16;
+  color: var(--ink);
+  font-size: 17px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.btn-mini:active {
+  border-color: var(--gold);
+  background: #2f281a;
+}
+
+
+
+.btn-primary {
+  min-width: 190px;
+  min-height: 62px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+  color: #1a1408;
+  font-size: 19px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.btn-primary:active {
+  filter: brightness(1.12);
+  transform: scale(0.985);
+}
+
+.btn-primary[disabled] {
+  filter: grayscale(0.7) brightness(0.7);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}

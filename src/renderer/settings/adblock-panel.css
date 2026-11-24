@@ -1,0 +1,107 @@
+/*
+ * Khối "Chặn quảng cáo" trong thẻ Cài đặt.
+ *
+ * Một tệp riêng thay vì nhét vào settings-controls.css: tệp kia đã 105 dòng và chứa hai điều khiển
+ * có trạng thái (ô chọn, công tắc), còn đây chỉ là bảng số đọc. Màu lấy đúng token của thẻ để khối
+ * này không trông như một widget lạc vào.
+ */
+
+.adblock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adblock__figures {
+  display: flex;
+  gap: 12px;
+}
+
+.adblock__figure {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+}
+
+/* Số là thứ mắt cần thấy trước; nhãn chỉ để giải thích nó là gì. */
+.adblock__value {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.adblock__label {
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+
+.adblock__total {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.adblock__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adblock__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.adblock__item:last-child {
+  border-bottom: 0;
+}
+
+/* Tên miền dài cắt bằng dấu ba chấm ở giữa: đầu và đuôi đều có nghĩa
+   (`ads.tracker.example.com` — cả `ads.` lẫn `.com` đều giúp nhận ra nó). */
+.adblock__domain {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.adblock__count {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.adblock__foot {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  /* Địa chỉ web dài hơn thẻ trên màn hình hẹp — cho xuống dòng thay vì tràn ra ngoài. */
+  overflow-wrap: anywhere;
+}
+
+.adblock__foot.is-stale {
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .adblock__foot {
+    transition: color 180ms ease;
+  }
+}

@@ -1,0 +1,209 @@
+/*
+ * Thanh kéo và hai nút bấm.
+ *
+ * Tách khỏi `volume-panel.css` để tệp kia giữ phần khung thẻ: phần dưới đây là thứ dễ bị chỉnh nhất
+ * (độ lớn nút, màu thanh kéo, nhịp nhấn) và tách ra thì mỗi lần chỉnh không phải mở lại cả tệp vỏ.
+ * Cả hai tệp đều dưới trần 300 dòng nên việc tách này là để dễ đọc, không phải để né trần.
+ */
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Nút +/−: 76 px là cỡ ngón tay áp út, không phải 44 px của con trỏ chuột. Kiosk này dùng như tablet
+   nên mọi thứ bấm được phải bằng đầu ngón tay, và hai nút này là thứ bấm nhiều nhất trên thẻ. */
+.step {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #24211a 0%, #1a1813 100%);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: transform var(--dur) var(--ease), background 140ms ease, border-color 140ms ease,
+    color 140ms ease;
+}
+
+.step__glyph {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+}
+
+.step__glyph svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.step:active {
+  /* Nhấn xuống thật, không chỉ đổi màu: ngón tay che mất màu, nhưng cảm giác lún thì không. */
+  transform: scale(0.94);
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #322b1e 0%, #241f16 100%);
+  color: var(--gold-soft);
+}
+
+/* Nút chạm trần/sàn thì mờ đi, để lần chạm không có kết quả không giống như máy bị treo. */
+.step:disabled {
+  opacity: 0.34;
+  cursor: default;
+  transform: none;
+  border-color: var(--line);
+  color: var(--ink-faint);
+}
+
+.range {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 76px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  /* Bàn phím ảo không tồn tại ở đây; `appearance: none` để tự vẽ toàn bộ thanh kéo. */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range:focus {
+  outline: none;
+}
+
+.range:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/*
+ * Rãnh: 16 px cao, bo tròn hết cỡ. Phần đã tô dùng gradient dừng cứng ở `--volume-fill` (do script
+ * ghi) chứ không dùng `::-webkit-slider-progress` — chỉ pseudo-element này mới nhận biến của riêng
+ * phần tử, và một gradient hai màu là cách duy nhất đổi được nó từ ngoài vào.
+ */
+.range::-webkit-slider-runnable-track {
+  height: 16px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    var(--gold-soft) calc(var(--volume-fill, 0%) - 0.5%),
+    #2b271f calc(var(--volume-fill, 0%) + 0.5%),
+    #2b271f 100%
+  );
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Núm kéo: 34 px, có vòng sáng để thấy được cả trên nền vàng lẫn nền xám. */
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  margin-top: -9px;
+  border: 2px solid #0d0c09;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #fffdf7 0%, #e8dcc0 46%, #c8b489 100%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+  transition: transform 120ms var(--ease);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+}
+
+/* Đang tắt tiếng: thanh kéo mất màu vàng. Màu vàng ở đây có nghĩa "đang phát ra tiếng". */
+.card.is-muted .range::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    #4a4234 0%,
+    #4a4234 calc(var(--volume-fill, 0%) - 0.5%),
+    #2b271f calc(var(--volume-fill, 0%) + 0.5%),
+    #2b271f 100%
+  );
+}
+
+.marks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 90px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+/*
+ * Nút tắt tiếng: viên thuốc, có cả glyph và chữ. Chữ là cần thiết vì glyph loa-có-sóng và
+ * loa-có-dấu-chéo khác nhau rất ít khi nhìn từ khoảng cách đứng trước màn hình.
+ */
+.mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-height: 56px;
+  padding: 0 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-2);
+  color: var(--ink-dim);
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.mute__glyph {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+}
+
+.mute__glyph svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mute:active {
+  background: #2a2419;
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+/* Đang tắt tiếng: nút này là trạng thái, không chỉ là hành động — nên nó mang màu cảnh báo. */
+.mute[aria-pressed='true'] {
+  border-color: rgba(224, 112, 77, 0.55);
+  background: rgba(224, 112, 77, 0.14);
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step,
+  .range::-webkit-slider-thumb,
+  .mute {
+    transition: none;
+  }
+
+  .step:active {
+    transform: none;
+  }
+}

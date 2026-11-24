@@ -1,0 +1,72 @@
+/*
+ * Thanh trên — cụm chỉ số bên phải (mạng / nhiệt độ) và công tắc ẩn giữ chỗ.
+ *
+ * Tách khỏi `top.css` vì đây là một cụm tự đứng: ba phần tử `.stat` và hai trạng thái của chúng,
+ * không dùng chung lớp nào với phần còn lại của dải. Tệp kia đã chạm trần 300 dòng (RULE §1.6).
+ */
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  padding-right: 2px;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.stat .ico {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * Lucide sizes every glyph itself (`viewBox` + `width`/`height` attributes), so the stat icons only
+ * need the stroke vocabulary. `.ico` is the slot the markup uses; `svg` is what lands inside it.
+ */
+.stat .ico svg,
+.stat > svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Offline is a state, not an error: dim amber reads as "no signal" without shouting. */
+.stat.off {
+  color: #8a5a3a;
+}
+
+/*
+ * A stat with nothing to say keeps its box. `display:none` (what `[hidden]` intended) collapsed the
+ * temperature slot and slid the zoom cluster 46 px sideways — nhật ký #123. `visibility` holds the
+ * geometry and only drops the paint, so nothing to its right can move.
+ */
+.stat.is-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/*
+ * Generic "hide this, keep its slot". Every element this bar toggles (spinner, status, retry) is a
+ * flex item whose own author rule beats `[hidden]{display:none}`; `visibility` sidesteps the
+ * specificity fight entirely and, unlike `display`, cannot reflow the strip.
+ */
+.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}

@@ -1,0 +1,268 @@
+/*
+ * Thẻ Cài đặt.
+ *
+ * Tự chứa, không link `base.css` — cùng lý do với `lock.css`: `base.css` đặt `background:transparent`
+ * cho html/body vì nó phục vụ thanh trên và dock (vốn nổi trên hình nền của kiosk). Trang này cũng
+ * trong suốt, nhưng cái *thẻ* thì phải đục, và nó cần bộ token riêng tối hơn bộ token của thanh trên
+ * — một tấm kính nổi trên nội dung mà lại cùng màu với thanh trên thì trông như dán vào màn hình.
+ *
+ * Cửa sổ này là `transparent: true` (xem `main/panel-window.ts`), nên `body` phải trong suốt và thẻ
+ * phải tự vẽ nền + bo góc. Nếu body vẽ nền, bốn góc bo sẽ là bốn điểm đen.
+ */
+
+:root {
+  --ink: #f2efe9;
+  --ink-dim: #a5a099;
+  --ink-faint: #6f6a63;
+  --gold: #c89e47;
+  --gold-soft: #e2c67f;
+  --danger: #e0704d;
+  --ok: #6fbf8f;
+  --card: #14130f;
+  --card-2: #1c1a15;
+  --line: #2c2820;
+  --radius: 26px;
+  font-family: 'Inter', 'Noto Sans', 'Segoe UI', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Đệm 26 px để bóng đổ của cửa sổ có chỗ vẽ. Cửa sổ rộng đúng bằng `spec.width` trong
+ * `panel-window.ts`, nên thẻ luôn nhỏ hơn cửa sổ một chút — nếu thẻ chạm mép, bóng bị cắt thành một
+ * đường viền cứng ở bốn cạnh.
+ *
+ * Chỉ `body` có đệm: `box-sizing: border-box` khiến `height: 100%` đã tính cả đệm, nên đặt đệm ở cả
+ * `html` lẫn `body` sẽ cộng dồn thành 52 px và thẻ nhỏ hơn khung 10%.
+ */
+html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 26px;
+  background: transparent;
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 34%);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: card-in 200ms ease-out both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 30px 20px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.card__title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.card__glyph {
+  width: 30px;
+  height: 30px;
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+
+.card__title h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Nút đóng: chạm được ở cỡ ngón tay (56 px), không phải cỡ con trỏ. */
+.card__close {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-2);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.card__close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.card__close:active {
+  background: #2a2419;
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+.card__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 30px 26px;
+  /* Không có thanh cuộn hiện: panel là cảm ứng, thanh cuộn chỉ tổ chiếm chỗ và không kéo được. */
+  scrollbar-width: none;
+  touch-action: pan-y;
+}
+
+.card__body::-webkit-scrollbar {
+  display: none;
+}
+
+.group {
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.group:last-child {
+  border-bottom: 0;
+}
+
+.group__head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.group__icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: rgba(200, 158, 71, 0.09);
+  color: var(--gold);
+}
+
+.group__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.group h2 {
+  margin: 2px 0 6px;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.group__hint {
+  margin: 0;
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 30px 24px;
+  border-top: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+  flex: 0 0 auto;
+}
+
+.card__status {
+  font-size: 16px;
+  color: var(--ink-dim);
+}
+
+.card__status.is-ok {
+  color: var(--ok);
+}
+
+.btn-primary {
+  min-width: 190px;
+  min-height: 62px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 16px;
+  /* Chữ tối trên nền vàng: cặp đã dùng cho nút chính của dock, giữ một ngôn ngữ thị giác. */
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+  color: #1a1408;
+  font-size: 19px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.btn-primary:active {
+  filter: brightness(1.12);
+  transform: scale(0.985);
+}
+
+.btn-primary[disabled] {
+  filter: grayscale(0.7) brightness(0.7);
+  cursor: default;
+}
+
+/* Thông báo ngắn ở đáy thẻ: "Đã lưu", "Sai mã", ... Tự ẩn sau 2.4 s bằng JS. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  max-width: 620px;
+  padding: 16px 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #201b12;
+  color: var(--ink);
+  font-size: 17px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.toast.is-error {
+  border-color: rgba(224, 112, 77, 0.6);
+  color: #ffd9cd;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>Nguồn</title>
+    <link rel="stylesheet" href="power.css" />
+    <link rel="stylesheet" href="power-grid.css" />
+    <link rel="stylesheet" href="code-pad.css" />
+  </head>
+  <body>
+    <!--
+      Thẻ Nguồn — bốn hành động, xếp từ vô hại tới phá huỷ.
+
+      Thứ tự không phải tuỳ ý: Khóa đứng đầu vì đó là thứ người ta cần nhiều nhất và nó không phá gì;
+      khởi động lại, tắt máy, rồi cuối cùng là thoát ra console — hành động duy nhất làm mất giao diện
+      kiosk và để lại một màn hình đen chờ người có mặt ở đó. Bốn nút cùng cỡ, cùng khoảng cách: một
+      nút nhỏ hơn cho hành động nguy hiểm không làm nó an toàn hơn, chỉ làm nó khó bấm đúng.
+    -->
+    <section class="card" id="card" role="dialog" aria-label="Nguồn và phiên">
+      <header class="card__head">
+        <div class="card__title">
+          <span class="card__glyph" id="head-glyph" aria-hidden="true"></span>
+          <h1>Nguồn</h1>
+        </div>
+        <button class="card__close" id="close" type="button" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="card__body">
+        <div class="grid" role="group" aria-label="Hành động">
+          <button class="act act--safe" id="act-lock" type="button">
+            <span class="act__glyph" id="glyph-lock" aria-hidden="true"></span>
+            <span class="act__label">Khóa màn hình</span>
+            <span class="act__hint">Vào màn hình chờ ngay</span>
+          </button>
+
+          <button class="act" id="act-restart" type="button">
+            <span class="act__glyph" id="glyph-restart" aria-hidden="true"></span>
+            <span class="act__label">Khởi động lại</span>
+            <span class="act__hint">Khởi động lại máy</span>
+          </button>
+
+          <button class="act" id="act-shutdown" type="button">
+            <span class="act__glyph" id="glyph-shutdown" aria-hidden="true"></span>
+            <span class="act__label">Tắt máy</span>
+            <span class="act__hint">Tắt nguồn hoàn toàn</span>
+          </button>
+
+          <!--
+            Ba nút phá huỷ đều hỏi mã. Thoát ra console là hành động duy nhất rời hẳn ứng dụng, nên nó
+            mang màu cảnh báo; nhưng cả ba cùng cỡ và cùng một luồng, vì polkit của logind chỉ bảo vệ
+            được đúng hai lệnh systemctl — thoát console thì không đi qua polkit.
+          -->
+          <button class="act act--danger" id="act-exit" type="button">
+            <span class="act__glyph" id="glyph-exit" aria-hidden="true"></span>
+            <span class="act__label">Thoát ra console</span>
+            <span class="act__hint">Cần mã quản trị</span>
+          </button>
+        </div>
+
+        <p class="note" id="note" role="status" aria-live="polite"></p>
+      </div>
+
+      <footer class="card__foot">
+        <span class="card__status" id="status" role="status" aria-live="polite"></span>
+      </footer>
+    </section>
+
+    <!--
+      Cấu trúc mà `CodePad` đòi: bốn thẻ bắt buộc cộng dòng gợi ý, không còn nút "Bỏ mã" vì mã là mật
+      khẩu sudo của máy — ứng dụng không đặt ra nó nên cũng không xoá được nó.
+    -->
+    <section class="codepad" id="codepad" hidden aria-label="Nhập mã quản trị">
+      <div class="codepad__head">
+        <h2 id="codepad-title">Nhập mã quản trị</h2>
+        <p class="codepad__hint" id="codepad-hint">Mã này là mật khẩu sudo của máy.</p>
+      </div>
+      <div class="codepad__dots" id="code-dots"></div>
+      <div class="codepad__keys" id="code-keys"></div>
+      <div class="codepad__foot">
+        <button class="btn-mini" id="code-cancel" type="button">Hủy</button>
+        <button class="btn-primary" id="code-submit" type="button" disabled>Xác nhận</button>
+      </div>
+    </section>
+
+    <script type="module" src="power.js"></script>
+  </body>
+</html>

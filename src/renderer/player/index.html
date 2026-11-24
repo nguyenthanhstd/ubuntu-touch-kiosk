@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; frame-src https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'none'"
+    />
+    <title>Video tuyển chọn</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0a0a0a;
+        color: #f2f2f2;
+        font-family: system-ui, sans-serif;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- A bare top-level navigation to the embed URL is refused by YouTube ("Error 153"), so the
+         local host page embeds the player instead; player.js fills in the id from ?v=. -->
+    <iframe
+      id="player"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen
+    ></iframe>
+    <script src="./player.js"></script>
+  </body>
+</html>

@@ -1,0 +1,443 @@
+/*
+ * The content band's rounded ring, drawn by nine always-on-top windows.
+ *
+ * Four of the nine are `top|bottom|left|right` and draw the ring itself. Four are the corner masks
+ * (`corner-tl|tr|bl|br`) and draw no ring at all — they paint the *wallpaper* over the square wedge
+ * that sits between the band's arc and the band's square bounding corner, which is the only way to
+ * hide an external app's square corner in a stacking compositor (see .mask-wall below). The ninth is
+ * the ✕.
+ *
+ * This file knows nothing about the panel size: the ring pieces are drawn from their own window
+ * edges, so the ring follows `framePartsFor()` when the panel or the dock height changes; the mask
+ * pieces are told where they are through custom properties from `chrome:settings`. The numbers below
+ * mirror src/shared/chrome.ts —
+ *   BAND_RADIUS_CSS = 24  → --ring-radius
+ *   FRAME_RING_CSS  = 2   → --ring-w
+ *   FRAME_MASK_CSS  = 26  → the mask windows' side (the 24 px arc plus the 2 px stroke)
+ * and a strip is exactly `ring` px thick, i.e. 2 px of real pixels. Only transform-free geometry is
+ * involved, so there is nothing here for the compositor to animate.
+ */
+
+:root {
+  --ring-radius: 24px;
+  --ring-w: 2px;
+  --ring-half: calc(var(--ring-w) / 2);
+
+  /*
+   * The ring is a hairline PAIR, not a hairline. It sits on the app's own outermost pixels, and those
+   * are white in FreeTube and Firefox but near-black in a video surface. A single tone cannot survive
+   * both: the previous `rgb(255 255 255 / 0.22)` was measured byte-identical to FreeTube's white title
+   * bar, i.e. the frame was painting and still invisible. So each slice draws `--ring-w` of colour as
+   * one px of light on the outside and one px of dark on the inside. Whichever way the app is toned,
+   * exactly one of the two reads, and the ring never disappears.
+   */
+  --ring-lit: rgb(255 255 255 / 0.82);
+  --ring-dim: rgb(0 0 0 / 0.5);
+}
+
+.frame {
+  /* The strip floats over the app; any background here would paint an opaque bar over its title
+     bar. base.css already clears both html and body, and this keeps frame.css self-contained. */
+  background: transparent;
+  cursor: default;
+}
+
+.edge {
+  position: fixed;
+  pointer-events: none;
+  /* Geometry only. The two colours come from the per-slice rules below, which put 1 px of light on
+     the outside of the card and 1 px of dark on the inside. */
+  border: 0 solid var(--ring-lit);
+}
+
+/* Where a part draws nothing, draw nothing at all: a mis-configured window would otherwise paint a
+   full-bleed line across whatever app it covers. */
+.frame--none .edge,
+.frame--none .frame-close,
+.frame--none .mask-wall {
+  display: none;
+}
+
+.frame-close {
+  display: none;
+}
+
+/*
+ * Top slice: corner arcs only.
+ *
+ * The band's top `FRAME_TOP_CSS` (44 px) belongs to the app — Firefox, FreeTube and Chromium all
+ * paint their own title bar there, and a ring across it would read as two stacked title bars. The
+ * arcs are the exception because they sit at the extreme ends, over the app's own bezel, and without
+ * them the band loses the two top corners that make it a card.
+ */
+.frame--top .edge {
+  inset: 0;
+}
+
+/*
+ * Bottom slice: the closing edge of the card. It has the mirror-image problem — nothing below the
+ * band belongs to an app — so the line runs the full width between the two arcs.
+ *
+ * `inset` is 1 px because the outer half of a 2 px window is the shadow ring: drawing it flush would
+ * put the lit half on the app's last row instead of just past it.
+ */
+.frame--bottom .edge {
+  inset: 0 var(--ring-radius);
+  border-bottom-width: var(--ring-half);
+  box-shadow: inset 0 calc(-1 * var(--ring-half)) 0 var(--ring-dim);
+}
+
+/* Left and right slices: the vertical runs, arcs included so the band is closed on all four sides. */
+.frame--left .edge {
+  inset: var(--ring-radius) 0;
+  border-left-width: var(--ring-half);
+  box-shadow: inset var(--ring-half) 0 0 var(--ring-dim);
+}
+
+.frame--right .edge {
+  inset: var(--ring-radius) 0;
+  border-right-width: var(--ring-half);
+  box-shadow: inset calc(-1 * var(--ring-half)) 0 0 var(--ring-dim);
+}
+
+/*
+ * One arc per corner. A 2 px strip can only show the first few rows of a 24 px radius, and that is
+ * exactly what a real rounded outline looks like there — the curve leaves the edge at the tangent
+ * point and drops out of the strip within ~10 px. Painting the arc on a square this size is what
+ * keeps the join with the vertical slice continuous.
+ *
+ * Same two-tone recipe as the straight runs: 1 px of `--ring-lit` as the border and 1 px of
+ * `--ring-dim` as an inset shadow. Because both are painted by the same element, the shadow follows
+ * `border-radius` exactly and the second tone lands inside the first along the whole curve.
+ */
+.frame--top .edge::before,
+.frame--top .edge::after,
+.frame--bottom .edge::before,
+.frame--bottom .edge::after,
+.frame--left .edge::before,
+.frame--left .edge::after,
+.frame--right .edge::before,
+.frame--right .edge::after {
+  content: '';
+  position: absolute;
+  width: var(--ring-radius);
+  height: var(--ring-radius);
+  border: 0 solid var(--ring-lit);
+}
+
+/* top slice → the two top corners */
+.frame--top .edge::before {
+  top: 0;
+  left: 0;
+  border-top-width: var(--ring-half);
+  border-left-width: var(--ring-half);
+  border-top-left-radius: var(--ring-radius);
+  box-shadow: inset var(--ring-half) var(--ring-half) 0 var(--ring-dim);
+}
+
+.frame--top .edge::after {
+  top: 0;
+  right: 0;
+  border-top-width: var(--ring-half);
+  border-right-width: var(--ring-half);
+  border-top-right-radius: var(--ring-radius);
+  box-shadow: inset calc(-1 * var(--ring-half)) var(--ring-half) 0 var(--ring-dim);
+}
+
+/* bottom slice → the two bottom corners */
+.frame--bottom .edge::before {
+  bottom: 0;
+  left: calc(-1 * var(--ring-radius));
+  border-bottom-width: var(--ring-half);
+  border-left-width: var(--ring-half);
+  border-bottom-left-radius: var(--ring-radius);
+  box-shadow: inset var(--ring-half) calc(-1 * var(--ring-half)) 0 var(--ring-dim);
+}
+
+.frame--bottom .edge::after {
+  bottom: 0;
+  right: calc(-1 * var(--ring-radius));
+  border-bottom-width: var(--ring-half);
+  border-right-width: var(--ring-half);
+  border-bottom-right-radius: var(--ring-radius);
+  box-shadow: inset calc(-1 * var(--ring-half)) calc(-1 * var(--ring-half)) 0 var(--ring-dim);
+}
+
+/* left slice → top-left and bottom-left */
+.frame--left .edge::before {
+  top: calc(-1 * var(--ring-radius));
+  left: 0;
+  border-top-width: var(--ring-half);
+  border-left-width: var(--ring-half);
+  border-top-left-radius: var(--ring-radius);
+  box-shadow: inset var(--ring-half) var(--ring-half) 0 var(--ring-dim);
+}
+
+.frame--left .edge::after {
+  bottom: calc(-1 * var(--ring-radius));
+  left: 0;
+  border-bottom-width: var(--ring-half);
+  border-left-width: var(--ring-half);
+  border-bottom-left-radius: var(--ring-radius);
+  box-shadow: inset var(--ring-half) calc(-1 * var(--ring-half)) 0 var(--ring-dim);
+}
+
+/* right slice → top-right and bottom-right */
+.frame--right .edge::before {
+  top: calc(-1 * var(--ring-radius));
+  right: 0;
+  border-top-width: var(--ring-half);
+  border-right-width: var(--ring-half);
+  border-top-right-radius: var(--ring-radius);
+  box-shadow: inset calc(-1 * var(--ring-half)) var(--ring-half) 0 var(--ring-dim);
+}
+
+.frame--right .edge::after {
+  bottom: calc(-1 * var(--ring-radius));
+  right: 0;
+  border-bottom-width: var(--ring-half);
+  border-right-width: var(--ring-half);
+  border-bottom-right-radius: var(--ring-radius);
+  box-shadow: inset calc(-1 * var(--ring-half)) calc(-1 * var(--ring-half)) 0 var(--ring-dim);
+}
+
+/*
+ * The four corner masks: the only reason an external app's square corner stops showing.
+ *
+ * The problem, measured on the panel: the band is 2540x1410 at (10,54) and every app fills it with a
+ * *rectangular* surface. labwc is a stacking compositor — no Wayland protocol lets one surface clip
+ * another — so inside the 24 px corner arc the app's own pixels still reach the square corner. The
+ * ring's arcs only cover the last few rows next to the tangents, and the diagonal through the corner
+ * is pure app. That diagonal wedge is what reads as "the corner pokes out".
+ *
+ * So each corner gets a 26x26 always-on-top window that paints the *wallpaper* — not a colour, not a
+ * blur, the actual image — cropped to the same pixel it would have shown if the app were not there.
+ * Laying a second copy of the same wallpaper on top is invisible against the desktop and total
+ * against the app.
+ *
+ * Shape: the mask must cover the wedge but *not* the card. A 26x26 square of wallpaper would erase a
+ * 26 px notch out of the app's title bar, so `mask-image` cuts the card's quarter-disc out of it, and
+ * what is left is only the region outside r=24 — the wedge. That wedge still overlaps the ring's
+ * top/bottom `FRAME_RING_CSS` rows right at the corner, where the arc is squashed by the 2 px strip,
+ * so the masks must be created *before* the four strips: a later window is higher, and the ring has
+ * to be the topmost paint or the wallpaper square eats the two rows nearest each corner.
+ *
+ * `--mask-x` / `--mask-y` are the mask's own position in PANEL coordinates, which is why the wallpaper
+ * layer is the whole panel and then translated out from under the window: the nav page's wallpaper is
+ * `position: fixed; inset: 0` over a 2560x1600 view, so the only way to reproduce its crop at an
+ * arbitrary 26x26 window is to draw the same box in the same place and slide it. `background-size:
+ * cover` then resolves identically because it sees the same 2560x1600 box.
+ *
+ * `background-attachment: fixed` would be the obvious tool and is wrong here: it pins the image to
+ * the *viewport*, which for this window is 26x26, so `cover` would resolve against 26x26 and the crop
+ * would be a 24x zoom of the corner pixel.
+ */
+.mask-wall {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--panel-w, 1px);
+  height: var(--panel-h, 1px);
+  transform: translate(calc(-1 * var(--mask-x, 0px)), calc(-1 * var(--mask-y, 0px)));
+  pointer-events: none;
+  background: var(--wallpaper-bg, var(--bg));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.frame--corner-tl .mask-wall,
+.frame--corner-tr .mask-wall,
+.frame--corner-bl .mask-wall,
+.frame--corner-br .mask-wall {
+  display: block;
+}
+
+/* The quarter-disc that must stay clear. The card's boundary is a radius-24 arc, and the ring stroke
+   lies *inside* it (the lit 1 px at r 23–24, the dark 1 px at r 22–23), so the mask must only become
+   opaque past r=24 — anything earlier would eat the arc from underneath. Its centre is one radius in
+   from the card's corner, which for the right-hand corners is `--ring-w` from the mask's own edge
+   because the mask is `--ring-w` wider than the radius. The 1 px feather sits exactly on the outer
+   edge of the stroke, where the app's corner pixel is already anti-aliased. */
+.frame--corner-tl .mask-wall {
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-radius)) calc(var(--mask-y) + var(--ring-radius)),
+    transparent 0 24px,
+    #000 25px
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-radius)) calc(var(--mask-y) + var(--ring-radius)),
+    transparent 0 24px,
+    #000 25px
+  );
+}
+
+.frame--corner-tr .mask-wall {
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-w)) calc(var(--mask-y) + var(--ring-radius)),
+    transparent 0 24px,
+    #000 25px
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-w)) calc(var(--mask-y) + var(--ring-radius)),
+    transparent 0 24px,
+    #000 25px
+  );
+}
+
+.frame--corner-bl .mask-wall {
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-radius)) calc(var(--mask-y) + var(--ring-w)),
+    transparent 0 24px,
+    #000 25px
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-radius)) calc(var(--mask-y) + var(--ring-w)),
+    transparent 0 24px,
+    #000 25px
+  );
+}
+
+.frame--corner-br .mask-wall {
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-w)) calc(var(--mask-y) + var(--ring-w)),
+    transparent 0 24px,
+    #000 25px
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--mask-x) + var(--ring-w)) calc(var(--mask-y) + var(--ring-w)),
+    transparent 0 24px,
+    #000 25px
+  );
+}
+
+/*
+ * The nine wallpapers, copied from nav/nav.css. They have to stay byte-identical in effect: the mask
+ * is only invisible while its pixels equal the ones the nav page painted underneath, and a single
+ * stop in the wrong place shows up as a tinted square at each corner of the band.
+ *
+ * Any change in nav/nav.css must be repeated here. The alternative — reading the computed background
+ * off the nav page — is not available: the two pages are separate renderers.
+ */
+body.wallpaper--studio .mask-wall {
+  background-image: url(../../assets/NT-Studio-2145-edited.png);
+}
+
+body.wallpaper--image .mask-wall {
+  background-image: var(--wallpaper-image);
+}
+
+body.wallpaper--studio {
+  --wallpaper-bg: #14100c;
+}
+
+body.wallpaper--graphite {
+  --wallpaper-bg: radial-gradient(120% 110% at 50% 0%, #232323 0%, #121212 45%, #060606 100%);
+}
+
+body.wallpaper--noir {
+  --wallpaper-bg: #050505;
+}
+
+body.wallpaper--ember {
+  --wallpaper-bg: radial-gradient(120% 120% at 15% 0%, #3a2412 0%, #1a1109 45%, #080605 100%);
+}
+
+body.wallpaper--sage {
+  --wallpaper-bg: radial-gradient(120% 120% at 80% 0%, #1f3026 0%, #101a14 50%, #070b09 100%);
+}
+
+body.wallpaper--ocean {
+  --wallpaper-bg: radial-gradient(120% 120% at 50% 100%, #123049 0%, #0d1c2b 50%, #050a10 100%);
+}
+
+body.wallpaper--sunset {
+  --wallpaper-bg: linear-gradient(155deg, #40202b 0%, #2a1a22 45%, #0b0809 100%);
+}
+
+body.wallpaper--plum {
+  --wallpaper-bg: radial-gradient(120% 120% at 30% 0%, #2e1c3a 0%, #1a1122 50%, #0a070d 100%);
+}
+
+/*
+ * The close window: a 46×44 hit area sitting exactly on the ✕ of the app in front. It is the only
+ * part of the frame that is not click-through, so it is the only part that is a real control.
+ *
+ * Transparent, like Firefox's own ✕, and deliberately so: the frame window covers the app's title
+ * bar, and painting a plate here would show as a dark square on every app light enough to contrast
+ * with it. The same glyph lands at the same place for FreeTube, Firefox and Chromium, which is what
+ * "áp dụng cho tất cả các app" asks for.
+ *
+ * `filter: drop-shadow` is what made the glyph survive that transparency. Measured on FreeTube, the
+ * bare glyph came out as (242,239,233) over a (255,255,255) title bar — drawn, and invisible. The
+ * shadow is a hairline of near-black hugging the stroke, so the mark reads on white and on video
+ * alike, while the plate stays empty.
+ */
+.frame--close .edge {
+  display: none;
+}
+
+.frame--close .frame-close {
+  display: grid;
+  place-items: center;
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  /* Top-right hugs the content band's own 24 px corner so the hover tint never squares off the
+     card; the other three corners are a plain chip radius. */
+  border-radius: 0 var(--ring-radius) 12px 12px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 120ms var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.frame--close .frame-close svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Near-black halo at 0 offset: no visible displacement, but the stroke always borders on a tone
+     that contrasts with it. Two layers give the stroke a 1 px dark rim on a light title bar. */
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.85)) drop-shadow(0 0 2px rgb(0 0 0 / 0.5));
+}
+
+.frame--close .frame-close:active {
+  background: rgb(255 255 255 / 0.14);
+  transform: scale(0.94);
+}
+
+.frame--close .frame-close:focus-visible {
+  outline: 2px solid var(--gold-soft);
+  outline-offset: -2px;
+}
+
+.frame--close .frame-close:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Hover is a mouse/stylus affordance only: on the panel a finger never hovers and a touch browser
+   can leave `:hover` stuck after a tap. `transform: none` cancels the generic .press lift, which
+   would slide the ✕ out from under the finger that is aiming at it. */
+@media (hover: hover) and (pointer: fine) {
+  .frame--close .frame-close:hover {
+    background: rgb(255 255 255 / 0.1);
+    transform: none;
+  }
+}
+
+/* Reduced motion keeps the colour confirmation and drops the displacement, matching motion.css. */
+@media (prefers-reduced-motion: reduce) {
+  .frame--close .frame-close:active {
+    transform: none;
+  }
+}

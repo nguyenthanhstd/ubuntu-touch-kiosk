@@ -1,0 +1,101 @@
+/*
+ * Shared chrome primitives: design tokens, the document reset and the generic button.
+ *
+ * The bar and the dock are two separate WebContentsViews, so each page links this file plus its own
+ * (top.css / dock.css). Everything that both strips need lives here exactly once; anything only one
+ * strip draws stays in that strip's file.
+ */
+
+:root {
+  --bg: #0a0a0a;
+  --panel: #141414;
+  --panel-2: #1b1b1b;
+  --line: #2a2a2a;
+  --ink: #f2efe9;
+  --ink-dim: #a5a099;
+  --ink-faint: #6f6a63;
+  --gold: #c89e47;
+  --gold-soft: #e2c67f;
+  --danger: #e0704d;
+  --radius: 12px;
+  --tap: 72px;
+  /* Mirrors FRAME_INSET / FRAME_RADIUS in src/shared/chrome.ts: the bar's four corners, the dock's
+     corners and the gap between the strips and the panel edge all have to agree, or the chrome
+     stops lining up with the frame the compositor pins external windows into. */
+  --frame-inset: 10px;
+  --frame-radius: 22px;
+  font-family: 'Inter', 'Noto Sans', 'Segoe UI', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  /* One CSS px is one device px here: the panel is 2560x1600 and labwc runs it at scale 1. */
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Every page that links this file is a strip floating over the wallpaper, and the wallpaper is
+     painted by the nav view underneath. A background here would paint an opaque canvas over it. */
+  background: transparent;
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+/*
+ * The one button shape used by both strips. It only animates colour here; the press displacement
+ * lives in motion.css so the timing stays in a single place.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0 14px;
+  height: 34px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.btn:hover {
+  background: #242424;
+  border-color: #3a3a3a;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn.icon {
+  width: 34px;
+  padding: 0;
+}
+
+/* Lucide paths are stroke-only, so the glyph is sized and coloured here, not in the SVG markup. */
+.btn.icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn.small {
+  height: 28px;
+  font-size: 13px;
+  padding: 0 12px;
+}

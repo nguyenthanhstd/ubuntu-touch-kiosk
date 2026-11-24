@@ -1,0 +1,68 @@
+/*
+ * Thanh trên — cặp nút cửa sổ kiểu Windows ở mút phải (─ và ✕).
+ *
+ * Tách khỏi `top.css` vì đây là khối duy nhất trong dải có nền riêng khi rê và có màu đỏ phá huỷ;
+ * để chung với bố cục dải khiến người đọc tưởng nó là một phần của bố cục.
+ */
+/*
+ * Windows-style window controls. They are square and flush with the right edge of the bar, the way
+ * the same pair sits on a Windows title bar; only the outer right corners follow the bar's radius.
+ */
+.wctl {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  /* -2px, not -1px: each 46x42 button needs 1 px of bleed past both bar edges to own all 44 rows
+     (measured 43 at -1px, 44 at -2px). `overflow: hidden` keeps the bleed invisible. */
+  margin: -2px -6px -2px 4px;
+  border-radius: 0 var(--frame-radius) var(--frame-radius) 0;
+  overflow: hidden;
+}
+
+.wctl__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.wctl__btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wctl__btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.wctl__btn:active {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/*
+ * `.wctl__btn` sets `display: inline-flex`, which outranks the UA rule for `[hidden]`, so hiding one
+ * of these needs `.is-hidden` (visibility) rather than the attribute. Kept as a note because the ⊠
+ * that used `is-idle` is gone: only the two kiosk buttons remain, and neither is ever hidden.
+ */
+
+/* Close keeps the Windows red; it is the only destructive control in the chrome. */
+.wctl__btn--close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.wctl__btn--close:active {
+  background: #b1271a;
+  color: #fff;
+}

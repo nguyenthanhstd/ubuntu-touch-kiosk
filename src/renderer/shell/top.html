@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>NT Fitness — thanh trên</title>
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="motion.css" />
+    <link rel="stylesheet" href="volume.css" />
+    <link rel="stylesheet" href="status-stats.css" />
+    <link rel="stylesheet" href="session-controls.css" />
+    <link rel="stylesheet" href="window-controls.css" />
+    <link rel="stylesheet" href="top.css" />
+    <!--
+      Giây đỏ cho thanh trên. Không đặt trong `top.css`: tệp đó đã 289/300 dòng theo trần `coding`
+      (WARN từ 201), và đây là chi tiết chỉ thuộc về thanh trên chứ không chia sẻ với mặt đồng hồ lớn
+      của màn hình chờ. Cỡ chữ 23px nên hiệu ứng quay chữ số của màn hình chờ không dùng ở đây — ở cỡ
+      này, quay chỉ làm số nhoè; màu đỏ đã đủ tách phần giây ra khỏi giờ-phút.
+    -->
+    <style>
+      .clock .sec {
+        /* Nhỏ hơn giờ-phút một bậc: giây là thông tin phụ, nhưng vẫn phải đọc được từ khoảng cách
+           đứng trước quầy. Thiếu `font-size` ở đây thì nó thừa hưởng 16px mặc định của `.clock` và
+           bé hơn hẳn cỡ 23px của `.time`. */
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--danger, #e0704d);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum' 1;
+      }
+      /* Dấu hai chấm trước giây mờ hơn dấu giữa giờ và phút: nó tách một nhóm phụ, không chia đôi
+         mặt đồng hồ. Cùng cỡ với giây để hai dấu không so le. */
+      .clock .sec-sep {
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--ink-faint, #6f6a63);
+      }
+    </style>
+  </head>
+  <body class="top">
+    <!-- The glass sits on its own element: a background on <body> propagates to the canvas, where
+         border-radius is not applied, and the bar would square off its own rounded corners. -->
+    <div class="bar-surface" aria-hidden="true"></div>
+    <div class="top-left">
+      <button class="brand" id="btn-home" type="button" title="Về Trang chủ" aria-label="NT Fitness — về Trang chủ">
+        <span class="brand__mark">NT</span>
+        <span class="brand__word">Fitness</span>
+      </button>
+      <span class="rule" aria-hidden="true"></span>
+      <!-- Glyphs are Lucide (icons.ts) and are injected by top.ts into these empty slots, so the
+           markup never carries a second copy of a path that already exists in that module. -->
+      <button class="btn icon" id="btn-back" type="button" title="Quay lại trang trước" aria-label="Quay lại trang trước">
+        <span class="ico" data-icon="arrowLeft"></span>
+      </button>
+      <button class="btn icon" id="btn-reload" type="button" title="Tải lại" aria-label="Tải lại">
+        <span class="ico" data-icon="rotateCw"></span>
+      </button>
+      <span class="title" id="title">Trang chủ</span>
+      <span class="spin is-hidden" id="spinner"></span>
+      <!--
+        The session controls the visitor asked to sit next to "Thử lại". They are placed to the LEFT
+        of `.status` rather than after it, because `.status` is a flex sibling that appears and
+        disappears: every control sitting to its right would jump sideways each time a page failed,
+        which is the same reflow defect the ⊠ used to cause on the zoom cluster (nhật ký #123).
+      -->
+      <button class="btn btn--outline press is-hidden" id="btn-go-home" type="button" title="Về trang chủ của kiosk" aria-hidden="true">
+        <span class="ico" data-icon="arrowLeft"></span>
+        <span>Quay lại</span>
+      </button>
+      <button class="btn btn--outline btn--outline-danger press is-hidden" id="btn-exit-app" type="button" title="Đóng ứng dụng đang mở" aria-hidden="true">
+        <span class="ico" data-icon="power"></span>
+        <span>Đóng ứng dụng</span>
+      </button>
+      <div class="status is-hidden" id="status">
+        <span class="warn" id="warn-text"></span>
+        <button class="btn small" id="btn-retry" type="button">Thử lại</button>
+      </div>
+    </div>
+
+    <div class="clock" role="timer" aria-label="Giờ Hồ Chí Minh">
+      <span class="time" id="clock-time">--:--</span>
+      <span class="sec-sep" aria-hidden="true">:</span>
+      <span class="sec" id="clock-sec">--</span>
+      <span class="dot" aria-hidden="true"></span>
+      <span class="date" id="clock-date"></span>
+    </div>
+
+    <div class="top-right">
+      <div class="stats" id="stats">
+        <span class="stat" id="stat-net" title="Mạng">
+          <span class="ico" data-icon="wifi"></span>
+          <span id="net-name">—</span>
+        </span>
+        <span class="stat" id="stat-temp" title="Nhiệt độ CPU">
+          <span class="ico" data-icon="thermometer"></span>
+          <span id="temp-val">—</span>
+        </span>
+      </div>
+      <!--
+        Volume. Only the speaker lives here now: it opens the "NTF volume" panel, a separate window
+        pinned below the bar by gen-labwc-config.sh.
+
+        It used to be an in-bar popover, and that design was forced, not chosen: this WebContentsView
+        is 44 px tall, so anything drawn below the bar is clipped by the view itself, not by CSS — the
+        slider had to live *inside* the strip and open sideways. A window has no such limit, which is
+        what makes the requested centre panel below the clock possible.
+      -->
+      <button
+        class="btn icon press"
+        id="btn-volume"
+        type="button"
+        title="Âm lượng"
+        aria-label="Âm lượng"
+      >
+        <span class="ico" data-icon="volume2"></span>
+      </button>
+      <!--
+        Cỡ chữ. Một nút mở thẻ nổi "NTF zoom", không còn là cụm A− / nhãn / A+ ngay trên dải.
+
+        Hai lý do, cả hai đều đo được trên panel: dải chỉ cao 44 px nên ba điều khiển chen trong đó
+        không đạt ngưỡng chạm thoải mái, và trần cỡ chữ đã lên 200 % thành bốn mức — bốn mức thì cần
+        bốn nút, không phải một cặp tăng/giảm bắt người dùng bấm ba lần. Nhãn phần trăm cũng đi theo:
+        nó từng phải giữ chỗ cố định để dải không reflow dưới ngón tay, mà chỗ đó chính là thứ ăn mất
+        bề ngang của hai nút.
+      -->
+      <button
+        class="btn icon press"
+        id="btn-zoom"
+        type="button"
+        title="Cỡ chữ"
+        aria-label="Cỡ chữ"
+      >
+        <span class="ico" data-icon="zoomIn"></span>
+      </button>
+      <!--
+        Settings and power. Placed to the right of the zoom button and left of the window controls so
+        the destructive pair (─ / ✕) stays at the outer edge, away from the buttons a visitor reaches
+        for routinely — the same reason the power button is not next to the volume button.
+
+        Neither button navigates: both open a separate window (see panel-window.ts).
+      -->
+      <button class="btn icon press" id="btn-settings" type="button" title="Cài đặt" aria-label="Cài đặt">
+        <span class="ico" data-icon="settings"></span>
+      </button>
+      <button class="btn icon press" id="btn-power" type="button" title="Nguồn" aria-label="Nguồn">
+        <span class="ico" data-icon="power"></span>
+      </button>
+      <!--
+        Kiosk window controls: ─ drops the app back to Home and ✕ closes the app in front — the same
+        action as the labelled "Đóng ứng dụng" button and the frame's ✕ over an external window, so
+        every ✕ on this panel means "close the app", never "end the session". Ending the session
+        (which wipes browsing data) is a separate admin action: the dock's "Kết thúc phiên" tile.
+      -->
+      <div class="wctl">
+        <button class="wctl__btn" id="btn-min" type="button" title="Thu nhỏ về Trang chủ" aria-label="Thu nhỏ">
+          <span class="ico" data-icon="minus"></span>
+        </button>
+        <button
+          class="wctl__btn wctl__btn--close"
+          id="btn-close"
+          type="button"
+          title="Đóng ứng dụng đang mở"
+          aria-label="Đóng ứng dụng đang mở"
+        >
+          <span class="ico" data-icon="x"></span>
+        </button>
+      </div>
+    </div>
+    <script type="module" src="top.js"></script>
+  </body>
+</html>

@@ -1,0 +1,232 @@
+/*
+ * Màn hình chờ.
+ *
+ * Tự chứa toàn bộ, không link base.css: base.css đặt `background: transparent` cho html/body (đúng cho
+ * thanh trên và dock, vốn nổi trên hình nền), còn trang này phải là một tấm đen đặc. Ghi đè một quy
+ * tắc của base.css bằng một quy tắc khác cùng độ ưu tiên là cách chắc chắn nhất để sau này có người
+ * đọc thứ tự tệp mà sửa nhầm.
+ *
+ * Vì sao đen: panel không có đèn nền — đã đo `/sys/class/backlight/` rỗng trên máy QA. Không hạ được
+ * độ sáng phần cứng thì hạ số điểm ảnh sáng là cách duy nhất tiết kiệm điện thật.
+ */
+
+:root {
+  --ink: #efece6;
+  --ink-dim: #7d7a75;
+  --ink-faint: #4a4845;
+  --gold: #c89e47;
+  font-family: 'Inter', 'Noto Sans', 'Segoe UI', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--ink);
+  /* Không chọn chữ, không con trỏ: cả trang là một vùng chạm, không có gì để trỏ vào. */
+  user-select: none;
+  cursor: default;
+}
+
+/*
+ * Một vùng chạm duy nhất. `touch-action: none` chặn Chromium tự cuộn/kéo trang khi ngón tay đi
+ * ngang — nếu không, một cú vuốt sẽ bị hiểu là pan và sự kiện `pointerup` không bao giờ tới.
+ */
+.lock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  touch-action: none;
+  overflow: hidden;
+}
+
+/*
+ * Quầng sáng rất mờ phía sau đồng hồ. Đây là toàn bộ "hiệu ứng" của màn hình chờ: một điểm sáng nhẹ
+ * để tấm đen không trông như máy đã tắt, và đủ mờ để không phá mục đích tiết kiệm điện.
+ */
+.lock__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1100px;
+  height: 1100px;
+  margin: -550px 0 0 -550px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 158, 71, 0.1) 0%, rgba(200, 158, 71, 0.03) 38%, transparent 68%);
+  pointer-events: none;
+  animation: lock-breathe 9s ease-in-out infinite;
+}
+
+@keyframes lock-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.lock__clock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+/*
+ * Giờ rất lớn: panel 2560x1600 nhìn từ khoảng cách 1–2 m trong phòng gym, nên cỡ chữ ở đây được chọn
+ * theo khoảng cách đọc chứ không theo thẩm mỹ. Cỡ chữ, độ đậm và bóng đổ khai báo ở đây rồi lan xuống
+ * từng ô chữ số qua `em`; bản thân khối này không còn chữ nào để canh.
+ *
+ * Không dùng `display: flex` ở đây: ô chữ số có `overflow: hidden`, mà với hộp như vậy baseline của
+ * flex item là mép dưới, nên `align-items: baseline` sẽ đẩy dấu hai chấm lên trên chữ số. Để dòng chữ
+ * bình thường và canh `vertical-align: bottom` ở hai loại ô thì đáy hai hộp trùng nhau, mà hai hộp cùng
+ * `line-height: 1` nên baseline bên trong cũng trùng.
+ *
+ * Cũng không đặt `letter-spacing`: mỗi chữ số nằm trong một ô cắt gọn, khoảng âm sẽ cắt mất mép phải.
+ */
+.lock__time {
+  text-align: center;
+  font-size: 230px;
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  color: var(--ink);
+  text-shadow: 0 0 70px rgba(200, 158, 71, 0.16);
+}
+
+.lock__date {
+  margin-top: 26px;
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  /* Chữ hoa nhỏ cho ngày tháng: kiểu chữ này đọc tốt ở cỡ lớn mà không tranh sự chú ý với giờ. */
+  text-transform: capitalize;
+}
+
+.lock__foot {
+  position: absolute;
+  bottom: 96px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/*
+ * Gợi ý mở khóa. Nhấp nháy chậm và rất nhẹ — mục đích là cho biết *có thể* chạm, không phải mời gọi.
+ * `pointer-events: none` để cú chạm vào đây vẫn do `.lock` nhận, tránh hai đường xử lý cho một cú chạm.
+ */
+.lock__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 30px;
+  border: 1px solid rgba(200, 158, 71, 0.2);
+  border-radius: 999px;
+  background: rgba(200, 158, 71, 0.05);
+  color: var(--ink-dim);
+  font-size: 21px;
+  letter-spacing: 0.02em;
+  animation: lock-hint 3.4s ease-in-out infinite;
+}
+
+.lock__hint-icon {
+  color: var(--gold);
+  opacity: 0.85;
+  flex: 0 0 auto;
+}
+
+@keyframes lock-hint {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/*
+ * Trạng thái đang mở khóa: mọi thứ mờ dần rồi main process ẩn cửa sổ. Đặt trên `.lock` chứ không
+ * trên từng phần tử để không phải giữ ba animation đồng bộ.
+ */
+.lock.is-unlocking .lock__clock,
+.lock.is-unlocking .lock__hint {
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.lock.is-unlocking .lock__glow {
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+/*
+ * Vệt sáng quét ngang khi chạm đúng. Chạy bằng transform nên không đụng layout, và tự về trạng thái
+ * đầu nhờ `animation` một lần — không có class nào phải gỡ.
+ */
+.lock__sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    rgba(200, 158, 71, 0.16) 50%,
+    transparent 58%
+  );
+  transform: translateX(-100%);
+}
+
+.lock.is-unlocking .lock__sweep {
+  animation: lock-sweep 620ms ease-out 1;
+}
+
+@keyframes lock-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Ngón tay còn đặt trên kính lúc khóa xong: hiện viền mảnh để biết cú chạm đã được ghi nhận. */
+.lock.is-touched .lock__hint {
+  border-color: rgba(200, 158, 71, 0.5);
+  color: var(--ink);
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lock__glow,
+  .lock__hint {
+    animation: none;
+  }
+}

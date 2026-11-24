@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self' file: 'unsafe-inline'; script-src 'self'; img-src 'self' data: file:; font-src 'self'; connect-src 'none'"
+    />
+    <title>NT Fitness Touch</title>
+    <link rel="stylesheet" href="nav.css" />
+  </head>
+  <body data-screen="home">
+    <!-- Wallpaper paint layer. Must be a real element: a negative z-index pseudo-element is not
+         committed reliably by the Wayland compositor (see nav.css). -->
+    <div class="wallpaper-layer" aria-hidden="true"></div>
+    <!-- This view is the wallpaper and nothing else: the top bar and the dock are separate
+         always-visible strips, and every app (including News) now opens as a page drawn above this
+         one. That leaves `placeholder` as the only real content here — it carries the "Đang tải…"
+         line and the load-failure card while a page is drawn or has just failed. -->
+    <main class="screen" id="screen">
+      <!-- Placeholder while a service page is drawn above this one -->
+      <section class="placeholder" id="placeholder" hidden>
+        <p class="placeholder__label" id="placeholder-label"></p>
+      </section>
+    </main>
+
+    <script src="nav.js"></script>
+  </body>
+</html>

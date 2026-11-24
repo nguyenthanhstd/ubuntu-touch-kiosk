@@ -1,0 +1,95 @@
+/*
+ * Thanh trên — hai điều khiển phiên: "Quay lại" và "Đóng ứng dụng".
+ *
+ * Tách khỏi `top.css` vì đây là một nhóm tự đứng với ngôn ngữ hình ảnh riêng (chip viền, không tô) mà
+ * phần còn lại của dải không dùng. Cả hai đều ẩn/hiện theo `inContent` nên chúng đi cùng nhau.
+ */
+/* ---- "Quay lại" / "Thoát ứng dụng": the two session controls ---- */
+
+/*
+ * Outlined rather than filled: the bar is a dark glass film, and a filled `.btn` disappears into it
+ * while an outline reads as a deliberate control at three metres. The border is the gold accent for
+ * Home and the danger red for exit, so the destructive one is never the one a finger finds blind.
+ */
+.btn--outline {
+  position: relative;
+  background: transparent;
+  border-color: var(--gold);
+  color: var(--gold-soft);
+  /* 32 px is the painted height that fits the 44 px strip with air above and below; the tap target
+     is widened to the full 44 px by ::before below, so the control still meets the panel's minimum
+     without the two outlined chips crowding the glass. */
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* The real tap target: 44 px tall, centred on the painted chip, invisible and layout-free. Only the
+   vertical axis is grown — the neighbours are horizontally adjacent, and a wide invisible pad would
+   steal taps meant for the status button beside it. */
+.btn--outline::before {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+  border-radius: inherit;
+}
+
+.btn--outline:hover {
+  background: rgba(200, 158, 71, 0.14);
+  border-color: var(--gold-soft);
+}
+
+.btn--outline:active {
+  background: rgba(200, 158, 71, 0.22);
+}
+
+.btn--outline .ico {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+}
+
+.btn--outline .ico svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn--outline-danger {
+  border-color: rgba(224, 112, 77, 0.75);
+  color: #f0a184;
+}
+
+.btn--outline-danger:hover {
+  background: rgba(224, 112, 77, 0.16);
+  border-color: var(--danger);
+}
+
+.btn--outline-danger:active {
+  background: rgba(224, 112, 77, 0.26);
+}
+
+/*
+ * Exit is the only control here that can be mid-flight: the session teardown takes a moment, and a
+ * second tap during it would start a second teardown. Disabled keeps its outline so it still reads
+ * as a button rather than vanishing.
+ */
+#btn-exit-app:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/*
+ * The failure status doubles as the report slot for a rejected action, which is why it is marked
+ * `.is-alert`: a page error and "could not exit" look identical otherwise.
+ */
+.status.is-alert .warn {
+  color: var(--gold-soft);
+}

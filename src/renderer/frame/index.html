@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      Same policy as nav/index.html. `img-src file:` is required because the wallpaper can be a
+      user-picked file, and `style-src 'unsafe-inline'` because frame.js writes the panel geometry
+      to custom properties on documentElement. No `connect-src`: this page never talks to the network.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self' file: 'unsafe-inline'; script-src 'self'; img-src 'self' data: file:; font-src 'self'; connect-src 'none'"
+    />
+    <title>NT Fitness — khung cửa sổ</title>
+    <link rel="stylesheet" href="../shell/base.css" />
+    <link rel="stylesheet" href="../shell/motion.css" />
+    <link rel="stylesheet" href="frame.css" />
+  </head>
+  <!--
+    One page, nine windows. The main process loads this file nine times with
+    ?part=top|bottom|left|right|corner-tl|corner-tr|corner-bl|corner-br|close and each window draws
+    exactly one piece, so the frame survives above a fullscreen video instead of being painted by the
+    page underneath.
+    Everything that is not needed for the requested part stays at display:none — a 2 px tall window
+    that also contained the close glyph would put a live button in a 2 px strip.
+
+    The four corner windows are the only ones that paint pixels rather than a stroke: they carry a
+    copy of the wallpaper, offset so that the 26x26 square shows the wallpaper pixels that belong
+    under that corner, and they clip it with the ring's radius. That is what makes an external app's
+    square corner disappear — see .mask-wall in frame.css.
+  -->
+  <body class="frame">
+    <div class="mask-wall" id="mask-wall" aria-hidden="true"></div>
+    <div class="edge" id="edge" aria-hidden="true"></div>
+    <button
+      class="frame-close press"
+      id="btn-frame-close"
+      type="button"
+      title="Đóng ứng dụng đang mở"
+      aria-label="Đóng ứng dụng đang mở"
+    ></button>
+    <script type="module" src="frame.js"></script>
+  </body>
+</html>

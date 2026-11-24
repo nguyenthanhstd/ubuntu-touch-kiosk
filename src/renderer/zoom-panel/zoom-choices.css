@@ -1,0 +1,95 @@
+/*
+ * Bốn nút mức cỡ chữ.
+ *
+ * Hai cột × hai hàng chứ không phải một hàng bốn nút: thẻ cao 470 px và nội dung phải đọc được từ
+ * khoảng cách một cánh tay trên panel 2560×1600. Bốn nút trên một hàng thì mỗi nút chỉ còn ~160 px
+ * ngang, dưới ngưỡng chạm thoải mái cho ngón tay.
+ *
+ * Mỗi nút tự phô bày mức của nó bằng chính chữ "Aa" ở cỡ tương ứng — đọc được ngay mà không cần đọc
+ * nhãn, và mức hiện tại thì có viền vàng. Con số phần trăm đi kèm để người dùng biết trần thật là bao
+ * nhiêu, vì đó là thứ họ yêu cầu nâng từ 150 % lên 200 %.
+ */
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card-2);
+  color: var(--ink-dim);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.level:active {
+  border-color: var(--gold);
+  background: #2f281a;
+  color: var(--ink);
+}
+
+/* Mức đang áp dụng: viền vàng + nền ấm. Không dùng `[aria-checked='true']` một mình vì nút cũng cần
+   phản hồi `:active` khi bấm sang mức khác, và hai trạng thái đó phải khác nhau bằng mắt. */
+.level[aria-checked='true'] {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(200, 158, 71, 0.16) 0%, rgba(200, 158, 71, 0.06) 100%);
+  color: var(--ink);
+}
+
+/* Cỡ chữ mẫu. `line-height: 1` để bốn mức chênh nhau bằng đúng cỡ chữ, không bằng khoảng dòng. */
+.level__sample {
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  transition: color 140ms ease;
+}
+
+.level[aria-checked='true'] .level__sample {
+  color: var(--gold-soft);
+}
+
+.level__label {
+  font-size: 15px;
+  color: inherit;
+}
+
+.level__percent {
+  font-size: 13px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.level[aria-checked='true'] .level__percent {
+  color: var(--gold);
+}
+
+/* Một nút không bấm được khi không có trang nào đang hiện — Home không có chữ để phóng. */
+.level:disabled {
+  border-color: var(--line);
+  background: #17150f;
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.level:disabled .level__sample {
+  color: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level,
+  .level__sample {
+    transition: none;
+  }
+}

@@ -1,0 +1,117 @@
+/*
+ * Lưới bốn nút hành động.
+ *
+ * Bốn nút cùng cỡ trong lưới 2×2: ngón tay trên panel 2560 px cần vùng chạm lớn, và một lưới đều nhau
+ * thì không nút nào trông "an toàn hơn" chỉ vì nó nhỏ hơn. Khác biệt giữa các hành động nằm ở màu
+ * glyph và ở câu mô tả, không nằm ở kích thước — kích thước khác nhau chỉ khiến người dùng bấm nhầm.
+ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  flex: 0 0 auto;
+}
+
+.act {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 4px;
+  align-items: center;
+  min-height: 108px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card-2);
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, transform 110ms ease;
+}
+
+/* Vùng chạm mở rộng 6 px ra ngoài viền: ngón tay không cần trúng đúng đường kẻ. */
+.act::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+
+.act:active {
+  background: #241f16;
+  border-color: var(--gold);
+  transform: scale(0.985);
+}
+
+.act:disabled {
+  opacity: 0.42;
+  cursor: default;
+  transform: none;
+  border-color: var(--line);
+  background: var(--card-2);
+}
+
+.act__glyph {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--ink-dim);
+}
+
+.act__glyph svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.act__label {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 21px;
+  font-weight: 500;
+  align-self: end;
+}
+
+.act__hint {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 14px;
+  color: var(--ink-faint);
+  align-self: start;
+}
+
+/* Khóa là hành động vô hại: tô vàng để nó là thứ đầu tiên mắt rơi vào. */
+.act--safe .act__glyph {
+  color: var(--gold-soft);
+}
+
+.act--safe {
+  border-color: rgba(200, 158, 71, 0.42);
+  background: #1e1a13;
+}
+
+/* Thoát ra console là hành động duy nhất rời khỏi ứng dụng: viền và glyph màu cảnh báo, nhưng vẫn
+   cùng cỡ với ba nút kia để không ai bấm nhầm vì nó nằm lệch. */
+.act--danger .act__glyph {
+  color: var(--danger);
+}
+
+.act--danger:active {
+  border-color: var(--danger);
+}
+
+/* Nút đang chờ main process trả lời. Giữ nguyên kích thước, chỉ đổi con trỏ và độ mờ của nhãn —
+   thay cả nút bằng spinner sẽ làm lưới nhảy. */
+.act.is-busy .act__hint {
+  color: var(--gold);
+}

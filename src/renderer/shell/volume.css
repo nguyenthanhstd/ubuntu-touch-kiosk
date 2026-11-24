@@ -1,0 +1,44 @@
+/*
+ * Loa trên thanh trên.
+ *
+ * Chỉ còn nút và hai trạng thái của nó. Bảng trượt đã thành cửa sổ `NTF volume` riêng, nên toàn bộ
+ * phần `.volume-pop` (định vị tuyệt đối, mở ngang sang trái, animation) đã rời khỏi tệp này — nó chỉ
+ * tồn tại vì dải trên cao 44 px không vẽ được ra ngoài chính nó.
+ *
+ * Nút dùng chung `.btn.icon` của dải nên chỉ cần ghi đè những gì riêng: nền trong suốt để nằm *trong*
+ * dải, và hai màu trạng thái.
+ */
+
+#btn-volume {
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+#btn-volume:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+/* Đang tắt tiếng là trạng thái khách phải nhận ra từ xa, nên nó đổi hẳn màu. */
+#btn-volume.is-muted {
+  color: var(--danger);
+}
+
+#btn-volume.is-muted:hover {
+  color: #f0937a;
+}
+
+#btn-volume .ico {
+  display: inline-flex;
+}
+
+#btn-volume .ico svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

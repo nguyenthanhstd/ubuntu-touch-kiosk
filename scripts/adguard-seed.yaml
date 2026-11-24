@@ -1,0 +1,51 @@
+# Mẫu cấu hình AdGuard Home.
+# install-adguard.sh thay hai chỗ giữ chỗ rồi kiểm bằng `--check-config` trước khi dùng.
+# Chỉ dùng cho lần cài đầu: nếu /opt/AdGuardHome/AdGuardHome.yaml đã có thì tệp đó được
+# giữ nguyên, vì AdGuard ghi bộ lọc và thống kê ngược vào chính nó.
+http:
+  # Nghe trên IP LAN để mở bảng điều khiển thẳng từ máy Windows / điện thoại trong nhà.
+  # Seed chỉ bật chặn quảng cáo DNS; đăng nhập vẫn bắt buộc, nên đừng mở ra Internet.
+  address: @@BIND_HOST@@:3000
+  session_ttl: 720h
+users:
+  - name: admin
+    password: "@@PASSWORD_HASH@@"
+auth_attempts: 5
+block_auth_min: 15
+language: vi
+theme: auto
+dns:
+  # Chỉ liệt kê ở đây thì AdGuard mới nghe. IPv6 do script ntf-adguard-ipv6.sh thêm
+  # vào sau khi cài (prefix ISP đổi thì nó tự cập nhật). Đừng dùng "::" — bind
+  # dual-stack sẽ đụng 127.0.0.53:53 và chính <LAN_IP>:53, AdGuard chết.
+  bind_hosts:
+    - @@BIND_HOST@@
+    - "::1"
+  port: 53
+  # Nhà cung cấp DNS gốc. Đổi sang 9.9.9.9 / 1.1.1.1 nếu mạng hay chặn 8.8.8.8.
+  upstream_dns:
+    - 8.8.8.8
+    - 1.1.1.1
+  upstream_mode: load_balance
+  # bootstrap: dùng để tìm địa chỉ IP của máy chủ DNS ở trên. Phải là DNS thô, không qua
+  # chính AdGuard, nếu không sẽ vòng tròn.
+  bootstrap_dns:
+    - 9.9.9.10
+    - 149.112.112.10
+  # 20 truy vấn/giây cho mỗi máy — chặn một máy bị nhiễm hỏi liên tục làm nghẽn cả nhà.
+  ratelimit: 20
+  filtering:
+    protection_enabled: true
+    filtering_enabled: true
+    # Bộ lọc có sẵn. AdGuard tự tải khi khởi động lần đầu, sau đó tự cập nhật.
+    # Đây là danh sách của AdGuard (không phải bên thứ ba) nên không cần thêm điều khoản.
+    filters:
+      - enabled: true
+        url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+        name: AdGuard DNS filter
+        id: 1
+      - enabled: true
+        url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt
+        name: AdAway Default Blocklist
+        id: 2
+schema_version: 35

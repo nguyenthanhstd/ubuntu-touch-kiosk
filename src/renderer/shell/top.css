@@ -1,0 +1,289 @@
+/*
+ * Top bar: the 44 px status strip (bar rows 10–53 on the panel).
+ *
+ * Three zones, not two: brand and history controls on the left, the clock pinned dead centre, and
+ * connections plus window controls on the right. The clock is absolutely centred rather than flexed,
+ * because the two side clusters never have the same width and a flexed clock drifts off centre.
+ *
+ * The bar is see-through: its own background is only a glass film so the wallpaper painted by the
+ * nav view reads continuously behind it.
+ */
+
+body.top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 6px 0 10px;
+  font-size: 14px;
+}
+
+/* Owns the frosted glass so the rounded corners can actually clip it. */
+.bar-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(16, 16, 16, 0.78), rgba(10, 10, 10, 0.62));
+  /* All four corners are rounded and the radius is exactly half the 44 px bar, so the bar reads as
+     a floating pill instead of a title bar hanging off a slab. */
+  border-radius: var(--frame-radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  pointer-events: none;
+}
+
+.top-left,
+.top-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+/*
+ * NTF-R14: this row used to be `overflow: hidden` at its content height (34 px). That silently
+ * clipped every `::after` hit box hanging off a button in it back down to 34 px — measured live: a
+ * probe at y=1 and y=43 returned `.top`, not the button, so the "44 px target" existed only in the
+ * stylesheet. The row now spans the full 44 px bar and does not clip; the ellipsis duty moved to the
+ * two text children that can actually overflow (`.title`, `.status .warn`), which each carry their
+ * own `overflow: hidden` + `text-overflow: ellipsis`.
+ */
+.top-left {
+  overflow: visible;
+  height: 100%;
+}
+
+.top-left .title,
+.status .warn {
+  overflow: hidden;
+}
+
+/*
+ * NTF-R14: `#status` itself must not clip, for the same reason `.top-left` no longer does — it is a
+ * 28 px box holding a 28 px button whose `::after` reaches to 44 px, so `overflow: hidden` here cut
+ * the retry target back to 28 px (measured: 28 rows owned, misses at −8…−1 and 28…31). The ellipsis
+ * belongs on the text child, which is what `.warn` above carries.
+ */
+#status {
+  overflow: visible;
+}
+
+.top-right {
+  justify-content: flex-end;
+  /*
+   * Same two properties `.top-left` already carries, for the same measured reason: a row that is only
+   * as tall as its 34 px buttons clips nothing itself, but it leaves the `::after` hit boxes no room to
+   * reach the bar's first and last row, and the window-control pair then measured 39 of 44 rows.
+   * Full height plus visible overflow is what lets a 44 px target exist inside a 44 px bar.
+   */
+  height: 100%;
+  overflow: visible;
+}
+
+/* The brand is the Home button. It owns the bar's left end, so it carries the left inset. */
+.brand {
+  display: inline-flex;
+  /* Centre, not baseline: "NT" and "Fitness" are different sizes, and a shared baseline pushed the
+     mark 4 px above the word. Centring the two boxes is what makes the lockup sit level. */
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 0 4px;
+  height: 34px;
+  position: relative;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.brand:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.brand:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.brand__mark {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.brand__word {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.rule {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--line);
+  flex: 0 0 auto;
+}
+
+.title {
+  color: var(--ink-dim);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 30%;
+  margin-left: 2px;
+}
+
+.spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid #3a3a3a;
+  border-top-color: var(--gold);
+  animation: spin 700ms linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Page-level failure. It lives in the left cluster beside the title instead of a second row, so the
+   bar keeps one height whether or not a page is broken. */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.status .warn {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- clock: the one thing readable from three metres ---- */
+
+.clock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  pointer-events: none;
+}
+
+.clock .time {
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.clock .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.clock .date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+/* ---- right cluster: connections, text size, window controls ---- */
+
+/* `#btn-zoom` borrows the speaker's hit-box rule below: both are bare `flex` children of
+   `.top-right`, and both were drawn at a bare 34x34 before the 44 px box was added. */
+
+/*
+ * NTF-R14: back, reload and the speaker were left at a bare 34x34 by the rule above being scoped to
+ * `.zoom` only — measured live in the panel, 34x34 each. They get the same 44x44 hit box here.
+ *
+ * Width is the hard axis: `::after` cannot reach 44 px without eating 5 px out of each neighbour's
+ * box, so the two glyph buttons in `.top-left` carry `margin-inline`, widening their 6 px flex gap to
+ * exactly the 10 px the two 5 px extensions need. Without it back and reload would overlap by 4 px and
+ * a tap on the seam would go to whichever painted last. The speaker is a bare flex child of
+ * `.top-right` with a 9 px run to the zoom cluster, so it needs no margin help — but it does still need
+ * the 44 px hit box, which is why it is anchored to its own box below rather than to `.top-left`.
+ */
+.top-left > .btn.icon {
+  position: relative;
+  margin-inline: 2px;
+}
+
+.top-left > .btn.icon::after,
+.brand::after,
+#btn-volume::after,
+#btn-zoom::after,
+#btn-settings::after,
+#btn-power::after {
+  content: '';
+  position: absolute;
+  /* -6 px, not -5: the button box starts at y=5 in a 44 px bar, so -5 leaves the y=0 boundary row
+     owned by the parent and the target measures 43 rows instead of 44. The extra pixel is clipped by
+     the bar's own overflow, so it costs nothing visually. */
+  inset: -6px -5px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+}
+
+/*
+ * Both the speaker and the text-size button are flex children of `.top-right`, and `.top-right` is
+ * itself `position: relative` — so without this rule their `::after` hit box resolves against the
+ * *cluster*, not the button. Measured live: `#btn-zoom`'s 44 px box stretched from x=2324 to the right
+ * edge and owned every point over `#btn-settings`, `#btn-power`, `#btn-min` and `#btn-close`, which
+ * each measured 0 of 44 hit rows. Anchoring each button to itself is what keeps the boxes disjoint.
+ */
+#btn-volume,
+#btn-zoom,
+#btn-settings,
+#btn-power {
+  position: relative;
+}
+
+/*
+ * "Thử lại" is only 28 px tall because `.btn.small` is a compact shape meant for a mouse. It is the
+ * one control a visitor reaches for *after* a page has already failed, so it is the last place to
+ * demand precision. Grown vertically only: a wide pad would cover the `#warn-text` explaining why.
+ */
+#status .btn.small {
+  position: relative;
+}
+
+#status .btn.small::after {
+  content: '';
+  position: absolute;
+  /* -10px, not -8px: the button starts at y=8 in a 44 px bar, so -8px lands the box exactly on
+     y=0 and y=44, where the first row belongs to `.top` and the last is outside the bar. Measured
+     with elementFromPoint row-walking: -8px owned 43 rows, -10px owns all 44. */
+  inset: -10px -4px;
+  min-height: 44px;
+  border-radius: 10px;
+}
+
+/* ---- phần còn lại: nhận chạm của loa, trạng thái thử lại ---- */
+

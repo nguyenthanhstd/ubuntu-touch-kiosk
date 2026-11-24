@@ -1,0 +1,90 @@
+/*
+ * Con số quay — dùng chung cho thanh trên và màn hình chờ.
+ *
+ * Ý tưởng lấy từ morphicons (guillermolg00) nhưng viết lại bằng CSS chứ không thêm thư viện: thứ tạo
+ * cảm giác "mượt" ở đó không phải là hiệu ứng hình khối mà là *đường cong lò xo* — đi nhanh lúc đầu,
+ * vượt nhẹ qua đích rồi lắng về. Đúng một `cubic-bezier` là đủ; kéo cả một thư viện morph icon vào
+ * chỉ để lấy một hàm easing là trả giá sai (RULE.md §4.3).
+ *
+ * Mỗi chữ số chỉ có hai ô: ô đang hiện và ô kế tiếp nằm ngay dưới. Quay là dịch cả hai lên đúng một
+ * ô, rồi đặt lại tức thì. Nhờ vậy 9 → 0 vẫn quay *xuôi* như mọi bước khác — nếu dùng một dải 0–9 và
+ * `translateY` theo giá trị thì 9 → 0 sẽ giật ngược cả dải, đúng kiểu "đồng hồ điện tử hỏng".
+ *
+ * Đơn vị là `em` hết, nên cùng một tệp phục vụ cỡ 23 px ở thanh trên và 230 px ở màn hình chờ mà không
+ * phải khai báo lại kích thước ở đâu.
+ */
+
+.dg {
+  display: inline-block;
+  position: relative;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+  /* `tabular-nums` ở đây chứ không ở lớp cha: nó phải áp lên chính ô chứa chữ số thì bề rộng ô mới
+     bằng nhau, và cột giờ mới không co giãn khi số đổi. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  vertical-align: bottom;
+}
+
+.dg__now,
+.dg__next {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
+  /* Chỉ `transform`: thuộc tính này chạy trên compositor, nên một đồng hồ chạy 24/7 không đẩy layout
+     mỗi giây. */
+  transition: transform var(--dg-ms, 420ms) var(--dg-ease, cubic-bezier(0.34, 1.56, 0.64, 1));
+  will-change: transform;
+}
+
+/* Ô kế tiếp nằm ngoài khung nhìn, ngay dưới ô đang hiện. */
+.dg__next {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.dg--rolling .dg__now,
+.dg--rolling .dg__next {
+  transform: translateY(-100%);
+}
+
+/* Đặt lại sau khi quay xong: phải cắt transition, nếu không ô vừa quay sẽ trượt ngược về chỗ cũ và
+   người dùng thấy số nhảy hai lần cho một giây. */
+.dg--jump .dg__now,
+.dg--jump .dg__next {
+  transition: none;
+}
+
+/* Giây tô đỏ: đây là chi tiết duy nhất trên mặt đồng hồ đổi mỗi giây, nên nó cần nổi hơn phần còn
+   lại mà không cần tới cỡ chữ lớn hơn. */
+.dg.is-seconds .dg__now,
+.dg.is-seconds .dg__next {
+  color: var(--danger, #e0704d);
+}
+
+.dg-sep {
+  /* Dấu hai chấm nhấp nháy theo nhịp giây sẽ gây nhiễu thị giác ở cỡ 230 px; để nó đứng yên và chỉ
+     cho màu mờ, đủ để tách nhóm số mà không tranh chấp với con số đang quay. */
+  display: inline-block;
+  line-height: 1;
+  color: var(--ink-dim, #a5a099);
+  vertical-align: bottom;
+  /* Nhích lên một chút: dấu hai chấm có chiều cao thị giác thấp hơn chữ số, canh theo baseline thì nó
+     trông tụt xuống. */
+  padding: 0 0.06em;
+}
+
+/*
+ * Ai đã bật "giảm chuyển động" thì nhận số mới ngay, không quay. Đây không phải trang trí bị cắt bớt:
+ * với người bị rối loạn tiền đình, một chục con số trượt mỗi giây là thứ gây khó chịu thật.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dg__now,
+  .dg__next {
+    transition: none;
+  }
+}

@@ -1,0 +1,97 @@
+/*
+ * Motion vocabulary for the shell chrome.
+ *
+ * This stack has no GPU composition path worth relying on (llvmpipe), so only `transform` and
+ * `opacity` are animated: neither triggers layout, and both are the properties the compositor can
+ * still handle cheaply. `transition: all` is banned for the same reason — it silently animates
+ * width/box-shadow and turns a 140 ms tap into a 3-frame stutter.
+ *
+ * Frequency decides how loud the motion may be. The window controls are pressed tens of times a day,
+ * so they get the near-imperceptible press only; dock tiles are pressed occasionally, so they may
+ * lift. There is no "delight" tier in this chrome.
+ */
+
+:root {
+  /* Decelerating ease for anything the finger started; nothing in a UI should ease *in*. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Use for anything that slides in from an edge, so it decelerates like a drawer. */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* 100–160 ms is the band where a press still feels like the finger caused it. */
+  --dur-press: 140ms;
+  /* Small popovers (volume slider, tile label): 125–200 ms. */
+  --dur-pop: 180ms;
+  /*
+   * Launch bounce of a dock tile. Read by dock.ts to arm its fallback timer, so the timeout that
+   * clears `is-launching` can never be shorter than the animation it replaces.
+   */
+  --dur-launch: 320ms;
+
+  /* Hover lift distance, flattened to 0 under reduced motion instead of killing the transition. */
+  --lift: 3px;
+}
+
+/*
+ * Press feedback. 0.97 — never 0.9: a control that shrinks more than a few percent reads as
+ * "mis-tapped" on a panel this size, and scale(0) would make it vanish.
+ *
+ * `.dock-item` is listed alongside `.press` so the dock needs no markup change to inherit the
+ * vocabulary; the tile's lift is its own visual slot but the timing is this one.
+ */
+.press,
+.dock-item {
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+.press:active,
+.dock-item:active {
+  transform: scale(0.97);
+}
+
+/*
+ * Lift on hover is a stylus or mouse affordance only. On the panel itself a finger never hovers, and
+ * a touch browser can report a sticky `:hover` after a tap, which would leave a tile stuck in the
+ * air until something else is touched.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .press:hover {
+    transform: translateY(calc(-1 * var(--lift)));
+  }
+
+  /*
+   * Ô dock dùng lớp `.is-hover` do dock.ts bật/tắt, không dùng `:hover`. Đây là panel lai chuột +
+   * cảm ứng: media query này vẫn khớp trên máy có chuột, nên `:hover` sẽ giữ ô vừa chạm đứng nhấc
+   * lên sau khi ngón tay đã rời đi (NTF-R08). Lớp JS chỉ được đặt cho chuột/bút và luôn bị gỡ ở
+   * pointerleave, pointerup, pointercancel — trạng thái nhấc không thể sống lâu hơn con trỏ.
+   */
+  .dock-item.is-hover {
+    transform: translateY(calc(-6 * var(--lift))) scale(1.1);
+  }
+}
+
+/*
+ * Reduced motion is gentler, not absent: the press still confirms the tap, it just stops moving.
+ * Removing the transform entirely would leave a control that gives no feedback at all.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lift: 0px;
+    --dur-press: 60ms;
+  }
+
+  /*
+   * Bounce và nhấc-theo-chuột là hai trạng thái có thể kẹt lại. Ở đây tắt hẳn animation và ghim
+   * chúng về vị trí nghỉ, nên không còn trạng thái nào phải chờ `animationend` mới được gỡ
+   * (NTF-R08). Cú nhấn `:active` vẫn còn, chỉ rút ngắn xuống 60 ms ở trên.
+   */
+  .dock-item,
+  .dock-item:hover,
+  .dock-item.is-hover,
+  .dock-item.is-launching,
+  .press,
+  .press:hover {
+    animation: none;
+    transform: none;
+  }
+}

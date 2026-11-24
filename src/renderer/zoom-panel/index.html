@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>Cỡ chữ</title>
+    <link rel="stylesheet" href="zoom-panel.css" />
+    <link rel="stylesheet" href="zoom-choices.css" />
+  </head>
+  <body>
+    <!--
+      Thẻ Cỡ chữ. Bốn nút rời rạc chứ không phải một thanh trượt: mỗi mức là một `ZoomLevel` mà
+      `ViewManager` đã biết, nên bấm là ghi đĩa đúng một lần và trang không phải tự làm tròn một số
+      thực. Trần 200 % nằm ở độ dài `ZOOM_ORDER` (`shared/services.ts`), không nằm ở đây.
+
+      Trước đây cụm này nằm trong thanh trên dưới dạng A− / nhãn / A+. Nó dời ra vì hai lý do: dải
+      trên chỉ cao 44 px nên hai nút không đủ lớn để chạm, và bốn mức thì cần bốn nút chứ không phải
+      một cặp tăng/giảm.
+    -->
+    <section class="card" id="card" role="dialog" aria-label="Cỡ chữ">
+      <header class="card__head">
+        <div class="card__title">
+          <span class="card__glyph" id="head-glyph" aria-hidden="true"></span>
+          <h1>Cỡ chữ</h1>
+        </div>
+        <button class="card__close" id="close" type="button" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="card__body">
+        <p class="scope" id="scope">Đang áp dụng cho trang đang mở</p>
+        <div class="levels" id="levels" role="radiogroup" aria-label="Mức cỡ chữ"></div>
+      </div>
+
+      <footer class="card__foot">
+        <span class="card__status" id="status" role="status" aria-live="polite"></span>
+      </footer>
+    </section>
+
+    <script type="module" src="zoom-panel.js"></script>
+  </body>
+</html>

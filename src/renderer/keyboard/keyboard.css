@@ -1,0 +1,291 @@
+/*
+ * Compact Gboard-style on-screen keyboard.
+ *
+ * This file styles the *contents* of the popup: the key grid and the Vietnamese accent strip. The
+ * popup shell itself - background, 24 px radius, ring, outer padding, grip - lives in popup.css,
+ * which is loaded after this file.
+ *
+ * Sizing rule used to be "the band is 260 CSS px tall and the full panel wide". The height part still
+ * holds, but the width is now whatever the popup got, between 320 and 1100 px, so every row is a
+ * flex row of `flex: 1 1 0` keys and no rule here may name a pixel width for the layout. Four key
+ * rows must always clear the 44 px minimum touch target at ~1 m on the 2560x1600 panel: the rows are
+ * `flex: 1 1 0` with a 44 px floor, and the 260 px default popup gives each of them ~46 px.
+ *
+ * Flat keys, no magnifier pop: Gboard draws the character already large on this panel, so a lifted
+ * copy would only cover the very keys the finger is about to hit next.
+ */
+
+:root {
+  --kb-bg: #202124;
+  --kb-bg-top: #2a2b2f;
+  --key: #3c4043;
+  --key-edge: #4a4e52;
+  --key-fn: #2c2e31;
+  --key-fn-edge: #3a3d40;
+  --key-ink: #e8eaed;
+  --key-ink-dim: #9aa0a6;
+  --accent: #c89e47;
+  --accent-ink: #1a1206;
+  --radius: 10px;
+  font-family: 'Inter', 'Segoe UI', 'Noto Sans', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  /* No scrollbar of any kind: the popup is a fixed-size card and the key grid must fit it. */
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+  /*
+   * Transparent root, opaque card.
+   *
+   * This used to be the opposite, and the old comment justified it: "a transparent document root
+   * lets the page behind the popup show through, and under Cage the rounded corners then read as
+   * black notches". The notches were real, but the cause was not the transparency — it was the
+   * overlay window painting `#12100C` behind the page. Once the window is `transparent: true` with a
+   * `#00000000` background (see `keyboard-overlay.ts`), an opaque root simply re-creates the notch
+   * from the other side: the card's 24 px corner arc has nothing to cut, so the four corner pixels
+   * of the rectangle stay filled.
+   *
+   * Now the rectangle is empty and only `.kb` paints, so the arc really is an arc. The card keeps
+   * its own opaque gradient — nothing of the app behind it bleeds into a key.
+   */
+  background: transparent;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Suggestion strip ---------- */
+
+.kb-suggest {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  height: 34px;
+  min-width: 0;
+  /*
+   * `overflow: visible`, not `hidden`: the dismiss button's 44 px hit box is a `::before` that must
+   * reach up into the card's top padding, and a clipping ancestor would cut it back to the strip's
+   * own 34 px — the exact defect that made three top-bar buttons measure 34 px. Chips cannot overflow
+   * sideways anyway: they are `flex: 0 1 auto; min-width: 0` and ellipsise instead.
+   */
+  overflow: visible;
+}
+
+.chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  border: 0;
+  background: #35373b;
+  color: var(--key-ink);
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+
+.chip:active {
+  background: #4a4d51;
+}
+
+/* The dismiss button is the last item in the suggestion strip, so it never steals a whole row. */
+.kb-hide {
+  position: relative;
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--key-fn);
+  color: var(--key-ink);
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/*
+ * NTF-T1: 52 x 34 measured as a touch target, i.e. under the 44 px floor — the same defect the top
+ * bar had. The strip is 34 px tall and sits directly under the grip, so the only direction with room
+ * is up into the card's 12 px top padding (34 + 12 = 46 available). `::before` grows the target
+ * without changing layout, and `top: -8px` centres the 44 px box on the button rather than leaving it
+ * flush against the strip's top edge.
+ */
+.kb-hide::before {
+  content: '';
+  position: absolute;
+  inset: -8px -6px -2px;
+  border-radius: 10px;
+}
+
+.kb-hide:active {
+  background: #3a3d40;
+}
+
+/*
+ * Move pad. Sits first in the suggestion strip, matches the dismiss button's height so the strip
+ * stays one line, and is deliberately wide enough for a finger: dragging a 34 px target while
+ * holding a popup steady is the whole interaction, so it gets 64 px rather than a square icon.
+ *
+ * NTF-T1: 64 x 34 -> 96 x 44. Chiều cao bị chặn bởi chiều cao dải gợi ý nên vùng bấm được nới bằng
+ * một lớp `::before` vượt ra ngoài hộp, vẫn nằm trong padding của card nên không che phím nào.
+ */
+.kb-move {
+  position: relative;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--key-fn);
+  cursor: grab;
+  /* Without this the browser claims the drag for scrolling and the popup jumps instead of moving. */
+  touch-action: none;
+}
+
+.kb-move::before {
+  content: '';
+  position: absolute;
+  inset: -6px -8px;
+  border-radius: 10px;
+}
+
+.kb-move:active {
+  background: #3a3d40;
+  cursor: grabbing;
+}
+
+.kb-move__dots {
+  width: 16px;
+  height: 16px;
+  background-image: radial-gradient(currentColor 1.6px, transparent 1.7px);
+  background-size: 8px 8px;
+  background-position: 0 0;
+  color: var(--key-ink);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ---------- Key grid ---------- */
+
+.kb-rows {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.row {
+  display: flex;
+  gap: 5px;
+  flex: 1 1 0;
+  /* The hard floor: 4 rows x 44 px + 3 x 5 px gaps = 191 px, which is what the 260 px popup and the
+     200 px KEYBOARD_MIN_H both have room for once the chrome is taken out. */
+  min-height: 44px;
+  min-width: 0;
+  justify-content: center;
+}
+
+.key {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--key);
+  color: var(--key-ink);
+  /* Scales with the popup height, so the same layout reads at 200 px and at 470 px. */
+  font-family: inherit;
+  font-size: clamp(21px, 9vh, 30px);
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--key-edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 60ms ease, transform 60ms ease, box-shadow 60ms ease;
+  touch-action: manipulation;
+}
+
+.key.fn {
+  background: var(--key-fn);
+  box-shadow: 0 2px 0 var(--key-fn-edge);
+  font-size: clamp(15px, 6vh, 21px);
+  font-weight: 500;
+}
+
+.key.wide-15 {
+  flex: 1.5 1 0;
+}
+
+.key.wide-2 {
+  flex: 2 1 0;
+}
+
+.key.wide-25 {
+  flex: 2.5 1 0;
+}
+
+.key.space {
+  flex: 5 1 0;
+  font-size: clamp(14px, 5vh, 18px);
+  color: var(--key-ink-dim);
+  background: #46494d;
+}
+
+.key.accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  box-shadow: 0 2px 0 #a07c2f;
+}
+
+.key.pressed {
+  transform: translateY(2px);
+  box-shadow: none;
+  background: #54585c;
+}
+
+.key.fn.pressed {
+  background: #3f4245;
+}
+
+.key.space.pressed {
+  background: #5a5e62;
+}
+
+.key.accent.pressed {
+  background: #b98f36;
+}
+
+/* Shift is a state, not an animation: gold means the next letter is upper case. */
+.key.shift-on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 2px 0 #a07c2f;
+}

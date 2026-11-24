@@ -1,0 +1,296 @@
+/*
+ * Dock: the 96 px launcher strip at the bottom edge (panel rows ~1494–1589).
+ *
+ * The dock is its own WebContentsView, so this file is linked by dock.html only; the tokens it
+ * reads come from base.css.
+ */
+
+body.dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  /* Symmetric padding, not 6/10: the pill is 80 px inside this 96 px band, and an uneven split
+     lifted the whole row 2 px off the band's centre line. Centring the pill centres the tiles with
+     it, which is what keeps the icons visually inside the dock rather than hugging one edge. */
+  padding: 8px 0;
+  /* `touch-action: none` on the band, not only on `.dock-item` (QA09-05): a swipe that starts in the
+     empty space beside a tile was claimed by the scroller, so `pointercancel` arrived on the first
+     move and the edge-swipe-to-Home gesture never began. Measured on the panel: swiping up from
+     x=42 in the dock produced `pointercancel` and stayed on the current page. The property is
+     inherited by the whole band, so the gutter, the separators and the pill all receive the same
+     unclaimed pointer sequence. */
+  touch-action: none;
+}
+
+.dock-shell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  max-width: calc(100% - 32px);
+  padding: 0 14px;
+  border-radius: var(--frame-radius);
+  /* Frosted glass: the content view is deliberately visible behind the dock band. */
+  background: rgba(28, 28, 30, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  /* Same reason as `body.dock`: the pill is a child, and a gesture that begins between two tiles
+     (or in the 14 px padding) must not be turned into a scroll. Asserts on this element directly. */
+  touch-action: none;
+}
+
+/*
+ * Centre, not flex-end. The tile used to bottom-align inside a 78 px box, which parked the icon
+ * against the dock's lower edge and left a 27 px void above it. Centring the icon in the tile is
+ * what makes the row look optically level with the shell.
+ */
+.dock-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 78px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  /* `touch-action: none` keeps the browser from claiming the press for a scroll or a double-tap
+     zoom before pointerup arrives — with a real finger that claim is what silently ate the tap. */
+  touch-action: none;
+  -webkit-user-drag: none;
+  /* No transition here: motion.css owns the press/lift timing so both strips share one vocabulary. */
+  transform-origin: center center;
+}
+
+/*
+ * Launch bounce: the tile springs up a few pixels and settles as the app opens. It is a separate
+ * keyframe rather than a change to the press transition in motion.css, because it says "something
+ * opened" instead of "the finger is down", and it must not run on every press of a tile that is
+ * already open. `.is-launching` is added by dock.ts on a successful tap; dock.ts is responsible for
+ * removing it, both on animationend and on a fallback timer (NTF-R08).
+ */
+@keyframes dock-launch {
+  0% {
+    transform: translateY(0) scale(0.97);
+  }
+  45% {
+    transform: translateY(-10px) scale(1.06);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dock-item.is-launching {
+  animation: dock-launch var(--dur-launch) var(--ease-out);
+}
+
+/*
+ * Giảm chuyển động: không bounce, và ghim mọi trạng thái nhấc/nhấn về vị trí nghỉ. Ở đây không còn
+ * `animationend` nào để dọn lớp `is-launching` — dock.ts bỏ hẳn lớp đó khi người dùng chọn giảm
+ * chuyển động, và bộ hẹn giờ dự phòng của nó vẫn gỡ được nếu lớp lỡ còn sót (NTF-R08).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dock-item,
+  .dock-item:hover,
+  .dock-item.is-hover,
+  .dock-item.is-launching {
+    animation: none;
+    transform: none;
+  }
+}
+
+.dock-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #0a0a0a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.dock-icon svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * The caption lives *inside* the tile (UI-01).
+ *
+ * It used to hang above the tile — `bottom: calc(100% + 6px)` — but the dock band is only 96 px tall
+ * and the tile is already 78 px of it, so there are 9 px of slack above. Measured on the panel: the
+ * label's rect started at `top = -17`, entirely outside the view, which is why it was never readable
+ * on the touch panel.
+ *
+ * Pinning it to the tile's lower edge is the only position with room, so the caption overlays the
+ * icon's lower half while it is shown — it is a tooltip, and it fades out again with the tile.
+ * Three details make it fit, stay legible and stay clear of its neighbours:
+ *   - `left/right: 0` keeps the box exactly the tile's 76 px, so the 6 px flex gap separates the
+ *     neighbours and even the 1.06 launch scale cannot bring two captions into contact.
+ *   - `white-space: normal` lets the longest caption ("Kết thúc phiên") wrap to a second line
+ *     instead of being clamped to an ellipsis, so all ten read in full.
+ *   - `backdrop-filter` lifts the pill off the tinted icon underneath it.
+ * `bottom: 6px` clears the 5 px running dot, and the 4 px reveal offset plus the 10 px launch bounce
+ * both stay well inside the 96 px band.
+ */
+.dock-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  white-space: normal;
+  padding: 2px;
+  border-radius: 6px;
+  background: rgba(10, 10, 10, 0.92);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--dur-pop) var(--ease-out), transform var(--dur-pop) var(--ease-out);
+  pointer-events: none;
+}
+
+.dock-item.is-hover .dock-label,
+.dock-item.show-label .dock-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/*
+ * `:hover` mở nhãn chỉ trên thiết bị có con trỏ thật. Panel cảm ứng báo `hover: hover` sau khi chạm
+ * và giữ nhãn của ô vừa chạm lại mãi — nên với ngón tay, nhãn mở bằng lớp `.is-hover` do dock.ts
+ * quản, hoặc bằng `.show-label`.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .dock-item:hover .dock-label {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dock-dot {
+  position: absolute;
+  bottom: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  opacity: 0;
+}
+
+.dock-item.running .dock-dot {
+  opacity: 1;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 46px;
+  margin: 0 6px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Per-app tint: a solid colour reads faster at one metre than a detailed logo, and the label
+   underneath resolves ambiguity on first use. Lucide ships no brand marks, so the tint is what
+   carries the identity. */
+.icon-youtube {
+  background: linear-gradient(#ff4b4b, #d61f1f);
+  color: #fff;
+}
+.icon-tiktok {
+  background: linear-gradient(145deg, #25f4ee, #010101 46%, #fe2c55);
+  color: #fff;
+}
+.icon-facebook {
+  background: linear-gradient(#4a90ff, #1b5fd9);
+  color: #fff;
+}
+.icon-news {
+  background: linear-gradient(#f2efe9, #cfc7b8);
+  color: #1a1a1a;
+}
+.icon-browser {
+  background: linear-gradient(#ffb347, #e2622f);
+  color: #241000;
+}
+.icon-search {
+  background: linear-gradient(#f2efe9, #d8d2c6);
+  color: #1a1a1a;
+}
+.icon-home {
+  background: linear-gradient(var(--gold-soft), var(--gold));
+  color: #22180a;
+}
+.icon-keyboard {
+  background: linear-gradient(#3a3a3c, #232326);
+  color: #f2efe9;
+}
+.icon-session {
+  background: linear-gradient(#4a3a3a, #2a2020);
+  color: #ffb4a2;
+}
+/* Ô Khóa: tông vàng mờ chứ không phải màu thương hiệu, vì nó không mở ứng dụng nào — nó đưa panel
+   vào trạng thái màn hình chờ. Thiếu lớp này (lỗi của bước thêm ô) thì glyph đen `#0a0a0a` nằm trên
+   nền trong suốt, tức gần như vô hình trên hình nền. */
+.icon-lock {
+  background: linear-gradient(#5a4a2a, #33260f);
+  color: var(--gold-soft);
+}
+
+.dock-item.keyboard-on .dock-icon {
+  box-shadow: 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* Edge-swipe affordance: a gold strip that grows under the finger. */
+.gesture-hint {
+  position: fixed;
+  pointer-events: none;
+  background: var(--gold);
+  opacity: 0.85;
+  z-index: 60;
+  will-change: transform;
+}
+
+.gesture-hint--back {
+  left: 0;
+  top: 12%;
+  width: 4px;
+  height: 76%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 12px rgba(200, 158, 71, 0.7);
+}
+
+.gesture-hint--home {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 4px;
+  transform-origin: center bottom;
+  transform: scaleY(0);
+  box-shadow: 0 0 12px rgba(200, 158, 71, 0.7);
+}
+
+body.gesturing {
+  cursor: grabbing;
+}

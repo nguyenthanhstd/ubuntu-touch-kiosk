@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>NT Fitness — bàn phím</title>
+    <link rel="stylesheet" href="keyboard.css" />
+    <!-- The popup shell: 24 px radius, opaque card, ring, outer padding, compact grip (NTF-R05). -->
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <!--
+      One card, and nothing outside it: this view is a floating popup, not a full-width band.
+      There is deliberately no <input> and no <form> here — the keys are injected into the content
+      page by the main process (ViewManager.sendKey), so this page must never take or move focus.
+    -->
+    <div class="kb" id="kb">
+      <!-- Grip: the only chrome. Drag it up/down to resize, tap it to dismiss. -->
+      <div class="kb-grip" id="grip" role="separator" aria-label="Kéo để đổi cỡ, chạm để ẩn">
+        <span class="kb-grip__bar"></span>
+      </div>
+
+      <div class="kb-suggest" id="suggest">
+        <!-- Move pad: drag to put the popup anywhere in the frame, tap to send it back to the corner. -->
+        <button
+          class="kb-move"
+          id="move"
+          type="button"
+          aria-label="Kéo để di chuyển bàn phím, chạm để về góc mặc định"
+        >
+          <span class="kb-move__dots" aria-hidden="true"></span>
+        </button>
+        <button class="chip" data-word="youtube" type="button">youtube</button>
+        <button class="chip" data-word="tiktok" type="button">tiktok</button>
+        <button class="chip" data-word="tin tức" type="button">tin tức</button>
+        <button class="chip" data-word="thể thao" type="button">thể thao</button>
+        <button class="chip" data-word="phim" type="button">phim</button>
+        <button class="kb-hide" id="hide" type="button" aria-label="Ẩn bàn phím">⌄</button>
+      </div>
+
+      <div class="kb-rows" id="rows"></div>
+    </div>
+    <script type="module" src="keyboard.js"></script>
+  </body>
+</html>

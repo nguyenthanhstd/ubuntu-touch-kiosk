@@ -1,0 +1,121 @@
+/*
+ * NTF-R05 - the floating popup shell.
+ *
+ * The keyboard is no longer a full-width band. `view-manager.ts` places this view as a card:
+ * width = max(320, min(1100, round(bandWidth * 0.55))) - 1100 px on the 2560 panel - right-aligned
+ * inside the content band, bottom edge 12 px above the dock, 260 px tall by default. Everything here
+ * therefore describes a *popup*, not a strip: rounded, opaque, ringed, and padded so that no key can
+ * ever reach a rounded corner. The keys themselves live in keyboard.css.
+ *
+ * Height budget at the 260 px default (the sum is what keeps every key at or above 44 px):
+ *   2 border + 12 top padding + 8 bottom padding = 22
+ *   gap to the suggestion strip                  =  2
+ *   suggestion strip                             = 34
+ *   three 5 px gaps between the four rows        = 15
+ *   four key rows                                = 187  -> 46.75 px per key
+ * The grip's drag floor is 250 px for the same reason (see keyboard.ts).
+ *
+ * The radius is hardcoded to 24 px to match the app's BAND_RADIUS_CSS (src/shared/chrome.ts). It is
+ * copied rather than imported because this page is a plain browser document with no module graph into
+ * the main-process constants.
+ */
+
+.kb {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  /* Two stops of the same dark palette the band used, and deliberately opaque: this card is the only
+     thing the window paints, so the keys sit on a solid surface while the 24 px corner arc stays
+     genuinely empty (the document root is transparent — see `keyboard.css`). */
+  background: linear-gradient(var(--kb-bg-top, #2a2b2f), var(--kb-bg, #202124));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  /* The gutter that keeps keys out of the corner arc: at 12 px from the side and 8 px from the
+     bottom, even a key's own 10 px radius stays inside the 24 px curve. The top padding doubles as
+     the grip's own band, so the grip costs no key height. */
+  padding: 12px 12px 8px;
+  gap: 2px;
+  /* Nothing may ever draw outside the rounded card, and nothing may ever scroll sideways. */
+  overflow: hidden;
+}
+
+/* ---------- Grip ---------- */
+
+/*
+ * Compact and centred, overlaying the card's top padding. It is the whole resize affordance: drag up
+ * to make the popup taller, drag down to make it shorter, tap to dismiss. Nothing spans the old
+ * 2540 px band any more.
+ *
+ * NTF-T1: hit area raised to 260 px wide x 44 px tall. Bản cũ là 168 x 16 — một dải cao 16 px cho
+ * ngón tay trên panel 2560x1600 ở khoảng 1 m, dưới xa ngưỡng 44 px mà chính các phím đang tôn
+ * trọng. Phần **nhìn thấy** vẫn là thanh 72x4 px: vùng bấm lớn hơn làm bằng `::before`, nên không
+ * đổi bố cục và không che phím nào.
+ */
+.kb-grip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 3;
+  width: 260px;
+  height: 44px;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Vùng bấm thật: ăn thêm xuống dưới mép trên để ngón tay không cần nhắm chính xác. */
+.kb-grip::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -16px;
+  border-radius: 10px;
+}
+
+.kb-grip__bar {
+  width: 72px;
+  height: 4px;
+  border-radius: 2px;
+  background: #6e7278;
+  transition: background 120ms ease, width 120ms ease;
+}
+
+.kb-grip:active .kb-grip__bar {
+  width: 104px;
+  background: var(--accent, #c89e47);
+}
+
+/* ---------- Short popups ---------- */
+
+/*
+ * A 260 px popup is the design point; this block only applies when the screen itself clamped the
+ * popup shorter than the grip's own 250 px floor. There the suggestion strip steps aside and the
+ * chrome shrinks, so the four key rows still clear 44 px all the way down to the 200 px
+ * KEYBOARD_MIN_H: (200 - 16 padding - 2 border - 6 row gaps) / 4 = 44.
+ */
+@media (max-height: 249px) {
+  .kb {
+    padding: 10px 10px 6px;
+    gap: 0;
+  }
+
+  .kb-grip {
+    height: 32px;
+  }
+
+  .kb-suggest {
+    display: none;
+  }
+
+  .kb-rows {
+    gap: 2px;
+  }
+}

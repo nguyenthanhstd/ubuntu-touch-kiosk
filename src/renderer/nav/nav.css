@@ -1,0 +1,177 @@
+:root {
+  --top-h: 44px;
+  --dock-h: 96px;
+  /* Mirrors FRAME_INSET / FRAME_RADIUS in src/shared/chrome.ts. The bar and the dock are separate
+     views inset from the panel edge by FRAME_INSET, so this page only has to reserve the band
+     between them. */
+  --frame-inset: 10px;
+  --bg: #0a0a0a;
+  --surface-2: #1c1c1c;
+  --gold: #c89e47;
+  --gold-dim: #8a6d31;
+  --text: #f5f2ea;
+  --text-dim: #b6b0a4;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', system-ui, sans-serif;
+  font-size: 20px;
+  overflow: hidden;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* ---------- Wallpaper ----------
+   A real element, not a `body::before` pseudo-element. Under Cage/Wayland a negative z-index paint
+   layer behind the root background only reached the compositor in the first frame, so the wallpaper
+   stayed black below the header. A normal in-flow layer at z-index 0 is always committed. */
+.wallpaper-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--wallpaper-bg, var(--bg));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body.wallpaper--studio .wallpaper-layer {
+  background-image: url(../../assets/NT-Studio-2145-edited.png);
+}
+
+body.wallpaper--image .wallpaper-layer {
+  background-image: var(--wallpaper-image);
+}
+
+body.wallpaper--studio {
+  --wallpaper-bg: #14100c;
+}
+body.wallpaper--graphite {
+  --wallpaper-bg: radial-gradient(120% 110% at 50% 0%, #232323 0%, #121212 45%, #060606 100%);
+}
+body.wallpaper--noir {
+  --wallpaper-bg: #050505;
+}
+body.wallpaper--ember {
+  --wallpaper-bg: radial-gradient(120% 120% at 15% 0%, #3a2412 0%, #1a1109 45%, #080605 100%);
+}
+body.wallpaper--sage {
+  --wallpaper-bg: radial-gradient(120% 120% at 80% 0%, #1f3026 0%, #101a14 50%, #070b09 100%);
+}
+body.wallpaper--ocean {
+  --wallpaper-bg: radial-gradient(120% 120% at 50% 100%, #123049 0%, #0d1c2b 50%, #050a10 100%);
+}
+body.wallpaper--sunset {
+  --wallpaper-bg: linear-gradient(155deg, #40202b 0%, #2a1a22 45%, #0b0809 100%);
+}
+body.wallpaper--plum {
+  --wallpaper-bg: radial-gradient(120% 120% at 30% 0%, #2e1c3a 0%, #1a1122 50%, #0a070d 100%);
+}
+
+/* ---------- Screens ---------- */
+
+/* This page is the wallpaper plus whatever a load is doing. It sits under the bar and the dock, both
+   of which are their own views, so it only occupies the band between them. */
+.screen {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* With the on-screen keyboard up this page is not resized — the keyboard sits over it — so the
+   bottom padding has to make room instead. The band is measured from the top of the keyboard, which
+   already sits above the inset dock, so both clearances are added back. */
+body.kb-open .placeholder {
+  padding-bottom: calc(var(--frame-inset) + var(--dock-h) + var(--kb-reserved, 0px) + 16px);
+}
+
+/* `hidden` is the only switch that turns this block off, and an author `display` rule outranks the
+   UA sheet's `[hidden] { display: none }`, so it has to be restated or the block stays laid out. */
+.placeholder[hidden] {
+  display: none;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  /* The nav page spans the full window, so the band between the bar and the dock has to be
+     reserved here for the label to sit on the visual centre of the content band. */
+  padding: calc(var(--frame-inset) + var(--top-h) + 20px) 0
+    calc(var(--frame-inset) + var(--dock-h) + 24px);
+  color: #6a655c;
+  font-size: 18px;
+}
+
+/* ---------- Load failure ---------- */
+
+.failure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 900px;
+  text-align: center;
+  color: var(--text);
+}
+
+.failure__title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.failure__detail {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.failure__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.failure__actions .ntf-choice {
+  min-height: 96px;
+}
+
+.fatal {
+  padding: 40px;
+  font-size: 22px;
+}
+
+/* Choices inside the failure card. */
+.ntf-choice {
+  min-height: 96px;
+  padding: 0 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid #35322d;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.ntf-choice:active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+}

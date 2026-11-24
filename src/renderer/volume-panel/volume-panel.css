@@ -1,0 +1,232 @@
+/*
+ * Thẻ Âm lượng — vỏ thẻ và bộ đọc.
+ *
+ * Tự chứa, không link `base.css` và không import `settings.css`: ba thẻ là ba cửa sổ riêng, và
+ * `settings.css` đặt `--radius: 26px` cùng một bảng chữ 30 px cho tiêu đề — hợp với thẻ 1020×800,
+ * nhưng thẻ này chỉ cao 430 px nên phải nhỏ hơn một bậc. Bộ token giữ nguyên giá trị để hai thẻ nằm
+ * cạnh nhau vẫn là một hệ.
+ *
+ * Cửa sổ là `transparent: true`, nên `body` phải trong suốt và thẻ phải tự vẽ nền + bo góc: nếu body
+ * vẽ nền thì bốn góc bo là bốn điểm đen.
+ */
+
+:root {
+  --ink: #f2efe9;
+  --ink-dim: #a5a099;
+  --ink-faint: #6f6a63;
+  --gold: #c89e47;
+  --gold-soft: #e2c67f;
+  --danger: #e0704d;
+  --card: #14130f;
+  --card-2: #1c1a15;
+  --line: #2c2820;
+  --radius: 24px;
+  /* Một nhịp chuyển động cho cả thẻ, khớp `--dur-pop` của thanh trên. */
+  --dur: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  font-family: 'Inter', 'Noto Sans', 'Segoe UI', 'Be Vietnam Pro', 'DejaVu Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Đệm 22 px để bóng đổ của cửa sổ có chỗ vẽ; thẻ chạm mép thì bóng bị cắt thành viền cứng.
+   Chỉ `body` có đệm: `box-sizing: border-box` khiến `height: 100%` tính cả đệm, nên đặt ở cả `html`
+   lẫn `body` sẽ cộng dồn thành 44 px và thẻ nhỏ hơn khung. */
+html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 22px;
+  background: transparent;
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 40%);
+  box-shadow: 0 30px 78px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  /*
+   * Vào từ phía trên, không từ dưới: thẻ này treo ngay dưới đồng hồ, nên hướng đi của nó phải khớp
+   * với hướng nó xuất hiện — nếu không nó trông như trượt ra từ một chỗ khác trên màn hình.
+   */
+  animation: card-drop var(--dur) var(--ease) both;
+}
+
+@keyframes card-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 26px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.card__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card__glyph {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+
+.card__glyph svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card__title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Nút đóng: cỡ ngón tay (52 px), không phải cỡ con trỏ. */
+.card__close {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--card-2);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.card__close svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card__close:active {
+  background: #2a2419;
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 26px 10px;
+  overflow: hidden;
+}
+
+/* Con số và đơn vị nằm chung hàng, cùng đường chân chữ. */
+.readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.readout__value {
+  font-size: 76px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  /* Chữ số đều bề rộng: nếu không, con số nhảy ngang trong lúc kéo và mắt đọc nhầm là mức đang đổi
+     loạn xạ. */
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.readout__unit {
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+/* Tên sink: chỉ để biết đang chỉnh loa nào, nên nhỏ, mờ, và cắt bằng dấu ba chấm nếu quá dài. */
+.readout__sink {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 0 auto;
+  min-height: 18px;
+}
+
+/* Đang tắt tiếng: con số lui về sau, nhãn "Tắt tiếng" ở chân thẻ là thứ nói sự thật. */
+.card.is-muted .readout__value {
+  color: var(--ink-faint);
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 26px 18px;
+  flex: 0 0 auto;
+}
+
+.card__status {
+  font-size: 14px;
+  color: var(--ink-faint);
+  text-align: right;
+  flex: 1 1 auto;
+  min-height: 18px;
+}
+
+.card__status.is-alert {
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+}
